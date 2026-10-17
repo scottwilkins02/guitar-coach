@@ -188,8 +188,8 @@ ul.tips{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 .daychips button{width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--panel);font-weight:700;cursor:pointer}
 .daychips button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav.tabs .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:repeat(7,1fr)}
-nav.tabs button{appearance:none;border:0;background:none;color:var(--muted);font:700 11px/1.1 var(--fb);padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-height:58px}
+nav.tabs .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:repeat(8,minmax(0,1fr))}
+nav.tabs button{appearance:none;border:0;background:none;color:var(--muted);font:700 10.5px/1.1 var(--fb);padding:8px 0 10px;min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-height:58px}
 nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 nav.tabs button{position:relative}
 nav.tabs button[aria-current="page"]{color:var(--accent-ink);font-weight:800}
@@ -291,6 +291,51 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 .smart{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .smart .st{width:28px;height:28px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-weight:700;font-size:14px}.smart .st.met{background:var(--ok);border-color:var(--ok);color:#fff}
 .smart b{display:block;line-height:1.25}.smart .small{display:block;color:var(--muted)}.smart .eyebrow{display:block;margin-bottom:2px}
+/* journey */
+.jhero{background:radial-gradient(circle at 20% 0%,#3a2416,#140d09 70%);color:#f3ede2;border-radius:14px;padding:18px;display:grid;grid-template-columns:1fr 92px;gap:12px;align-items:center}
+.jhero .eyebrow{color:#e49a42}.jhero h3{margin:6px 0 4px;font:800 32px/1 var(--fd);text-transform:uppercase;letter-spacing:.03em}
+.jhero p{margin:0;font-size:13px;color:#d9cfc0}.jhero p b{color:#fff}
+.jring{width:92px;height:92px}.jr1{font:800 26px var(--fd)}.jr2{font:500 10px var(--fm);fill:#c8b78f}
+.jmap{background:linear-gradient(180deg,#4a2c1b,#2c180e 50%,#4a2c1b);border-radius:12px;padding:10px 0 6px;position:relative;overflow:hidden}
+.jtrk{display:grid;grid-template-columns:100px 1fr;align-items:center;height:44px;position:relative}
+.jnm{font:700 11px/1.1 var(--fb);color:#f3ede2;padding-left:12px;text-transform:uppercase;letter-spacing:.04em}
+.jnm small{display:block;font:500 10px var(--fm);color:#c8b78f;text-transform:none;letter-spacing:0;margin-top:2px}
+.jstg{position:relative;display:grid;grid-template-columns:repeat(6,1fr);align-items:center;height:100%;padding-right:10px}
+.jstg:before{content:"";position:absolute;left:0;right:10px;top:50%;height:2px;background:#c8b78f;opacity:.55}
+.jfrets{position:absolute;inset:0 10px 0 100px;display:grid;grid-template-columns:repeat(6,1fr);pointer-events:none}.jfrets span{border-right:2px solid rgba(201,204,209,.3)}
+.jn{appearance:none;position:relative;justify-self:center;width:24px;height:24px;border-radius:50%;border:2px solid rgba(243,237,226,.35);background:transparent;padding:0;cursor:pointer}
+.jn.later{border-style:dashed;opacity:.7}
+.jn.done{background:radial-gradient(circle at 40% 35%,#ffe2b0,#f0a640 60%,#b8661a);border:2px solid #fff;box-shadow:0 0 12px rgba(240,166,64,.7)}
+.jn.cur{border:2px solid #f0a640;background:#2c180e}.jn.cur:after{content:"";position:absolute;inset:-7px;border-radius:50%;border:2px solid rgba(240,166,64,.45)}
+.jn.cur i{position:absolute;inset:3px;border-radius:50%;background:conic-gradient(#f0a640 var(--p),transparent 0)}
+.jn.big{width:32px;height:32px;justify-self:start}
+.jtk{border-top:1px solid var(--line);padding:4px 0}.jtk:first-of-type{border-top:0}
+.jtk summary{list-style:none;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;padding:8px 0;cursor:pointer}.jtk summary::-webkit-details-marker{display:none}
+.jtk summary b{display:block;font:800 19px/1.1 var(--fd);text-transform:uppercase;letter-spacing:.02em}.jtk summary small{color:var(--muted);font-size:12px}
+.jdots{color:var(--accent);letter-spacing:2px;font-size:14px}
+.jtk ol{list-style:none;margin:0 0 8px;padding:0}
+.jtk li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:start;padding:9px 0;border-top:1px dashed var(--line)}
+.jtk li.hl{background:var(--accent-soft);border-radius:8px;padding-inline:6px}
+.jtk li .ic{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 12px var(--fm);border:2px solid var(--line);color:var(--muted)}
+.jtk li.dn .ic{background:#f0a640;border-color:#b8661a;color:#1a0e02}.jtk li.cu .ic{border-color:#f0a640;color:var(--accent-ink)}
+.jtk li b{display:block;font-size:14px}.jtk li small{display:block;color:var(--muted);font-size:12px}.jtk li.ah b{color:var(--muted)}
+.jtk li code{font:500 11px var(--fm);color:var(--accent-ink);white-space:nowrap;padding-top:3px}
+.jnow{font-size:11px;color:var(--accent-ink);font-weight:700;max-width:96px;text-align:right}
+.jtk .bar{height:5px;margin-top:5px}.jact{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}.jact:empty{display:none}
+.jph{font-weight:700;color:var(--accent-ink)}
+.jstory{position:relative;padding-left:22px;display:flex;flex-direction:column;gap:12px}
+.jstory:before{content:"";position:absolute;left:7px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.jch{position:relative;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.jch:before{content:"";position:absolute;left:-21px;top:16px;width:14px;height:14px;border-radius:50%;background:var(--accent);border:3px solid var(--bg)}
+.jch.future{opacity:.62}.jch.future:before{background:var(--bg);border:2px dashed var(--muted)}.jch.now{border:2px solid var(--accent)}
+.jch .when{font:500 11px var(--fm);color:var(--muted)}
+.jch h4{margin:2px 0 6px;font:800 22px/1 var(--fd);text-transform:uppercase;letter-spacing:.02em}
+.jch ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px;font-size:13px}
+.jch li{display:grid;grid-template-columns:52px 1fr;gap:8px}.jch li code{font:500 11px var(--fm);color:var(--accent-ink);padding-top:2px}
+.jch p{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.tag{display:inline-block;font:700 10px var(--fm);letter-spacing:.1em;background:var(--accent-soft);color:var(--accent-ink);border-radius:4px;padding:2px 6px;text-transform:uppercase}
+.jtoday{appearance:none;text-align:left;font:inherit;color:inherit;background:radial-gradient(circle at 20% 0%,#3a2416,#140d09 75%);border:0;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;cursor:pointer}
+.jtoday .eyebrow{color:#e49a42}.jtoday b{font:800 24px/1 var(--fd);text-transform:uppercase;color:#f3ede2;letter-spacing:.03em}.jtoday .small{color:#d9cfc0!important}.jtoday .bar{background:rgba(243,237,226,.18);margin-top:6px}
 [hidden]{display:none!important}
 </style>
 
@@ -320,6 +365,11 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
   </div>
   <div class="card" id="t-loop"></div>
   <div class="card" id="t-ready"></div>
+</section>
+
+<section id="v-journey" class="view" hidden>
+  <div class="viewhead"><h2>Your journey</h2></div>
+  <div id="j-body" class="stack"></div>
 </section>
 
 <section id="v-neck" class="view" hidden>
@@ -435,6 +485,7 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 
 <nav class="tabs" aria-label="Sections"><div class="in">
   <button data-tab="today"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M8 15l2.5 2.5L16 13"/></svg>Today</button>
+  <button data-tab="journey"><svg viewBox="0 0 24 24"><path d="M5 20c0-5 5-4 7-8s7-3 7-8"/><circle cx="5" cy="20" r="1.8"/><circle cx="19" cy="4" r="1.8"/></svg>Journey</button>
   <button data-tab="neck"><svg viewBox="0 0 24 24"><path d="M2 7h20M2 12h20M2 17h20M7 5v14M13 5v14M18 5v14"/></svg>Neck</button>
   <button data-tab="riffs"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></svg>Riffs</button>
   <button data-tab="scales"><svg viewBox="0 0 24 24"><path d="M3 20h4v-4h4v-4h4V8h4V4h2"/></svg>Lead</button>
@@ -821,7 +872,7 @@ function goTab(tab,opts){
   if(tab!==TAB)listenStopAll();TAB=tab;$$('.view').forEach(v=>v.hidden=v.id!=='v-'+tab);
   $$('nav.tabs button').forEach(b=>{if(b.dataset.tab===tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
   if(opts)applyTool(opts);
-  ({today:renderToday,neck:renderNeckView,riffs:renderRiffs,scales:renderLead,songs:renderSongs,chords:renderChords,prog:renderProg})[tab]();
+  ({today:renderToday,journey:renderJourney,neck:renderNeckView,riffs:renderRiffs,scales:renderLead,songs:renderSongs,chords:renderChords,prog:renderProg})[tab]();
   window.scrollTo(0,0);
 }
 function applyTool(o){
@@ -881,7 +932,8 @@ $('#v-today').addEventListener('click',e=>{
   if(b.dataset.act==='tool')goTab(blk.tool.tab,blk.tool);
   if(b.dataset.act==='timer'){audio();if(TM&&TM.id===blk.id)TM=null;else TM={id:blk.id,end:Date.now()+blk.min*60000,name:blk.name};renderToday()}
   if(b.dataset.act==='goprog')goTab('prog');
-  if(b.dataset.act==='smart'){const k=b.dataset.k,it=k==='chal'?dailyChallenge():smartPlan()[k];goTab(it.tool.tab,it.tool);return}
+  if(b.dataset.act==='gojourney')goTab('journey');
+  if(b.dataset.act==='smart'){const k=b.dataset.k,it=k==='chal'?dailyChallenge():k==='stage'?jNext(jAll(),1)[0]:smartPlan()[k];goTab(it.tool.tab,it.tool);return}
   if(b.dataset.act==='looplesson'){goTab('songs',{tab:'songs',mode:'loop'});LP.id=b.dataset.id;LP.step=0;renderSongs()}
 });
 function markBlock(id,on){const t=today();const e=dayEntry(t,true);
@@ -2463,10 +2515,136 @@ function renderSmart(){const el=$('#t-smart');if(!el)return;const p=smartPlan(),
   const row=(k,lab,it)=>{const d=it.done();return `<div class="smart ${d?'done':''}"><span class="st ${d?'met':''}">${d?'✓':''}</span><div><span class="eyebrow">${lab}</span><b>${esc(it.name||it.text)}</b>${it.how?`<span class="small">${esc(it.how)}</span>`:''}</div><button class="btn small" data-act="smart" data-k="${k}">Open</button></div>`};
   const AN=Object.fromEntries(AREAS.map(a=>[a.id,a.name]));
   el.innerHTML=`<div class="row" style="justify-content:space-between"><b>Today’s mix</b><span class="muted small">Picked from your scores</span></div>
+   ${(()=>{const s=jNext(jAll(),1)[0];return s?row('stage','Next stage · '+s.track.name,{name:s.name,how:s.how,done:()=>false}):''})()}
    ${row('focus','Focus · '+AN[p.focus.area],p.focus)}
    ${row('review','Review · '+AN[p.review.area],p.review)}
    <div class="smart ${cd?'done':''}"><span class="st ${cd?'met':''}">${cd?'✓':'★'}</span><div><span class="eyebrow">Daily challenge</span><b>${esc(ch.text)}</b></div><button class="btn small" data-act="smart" data-k="chal">Open</button></div>
    <p class="small muted">Focus is your lowest-scoring area. Review is the one you have left longest. Do these alongside your level blocks below.</p>`}
+
+/* ================= JOURNEY: 8 skills x 6 stages, phases, chapters, story ================= */
+const jq=(fn)=>(data.quiz||[]).filter(fn).map(r=>r.d).sort()[0]||null;
+const jt=(item,bpm)=>(data.tempo||[]).filter(x=>x.i===item&&x.b>=bpm).map(x=>x.d).sort()[0]||null;
+const jc=(drill,n)=>(data.changes||[]).filter(r=>r.drill===drill&&r.n>=n).map(r=>r.d).sort()[0]||null;
+const jbest=(fn,key)=>(data.quiz||[]).filter(fn).reduce((m,r)=>Math.max(m,key(r)),0);
+const tb=i=>{const b=tempoBest(i);return b?b.bpm:0};
+const NECKM=['find','name','play'];
+function riffsAtSpeedDate(k){const ds=RIFFS.map(r=>jt('riff:'+r.id,r.to)).filter(Boolean).sort();return ds.length>=k?ds[k-1]:null}
+const JR=(d,frac,now)=>({d,met:!!d,frac:d?1:Math.max(0,Math.min(.99,frac||0)),now:now||''});
+const JTRACKS=[
+ {id:'rhythm',name:'Riffs & rhythm',stages:[
+  {id:'r1',ph:1,name:'First riff with the click',how:'Any riff logged clean with the click',tool:{tab:'riffs'},t:()=>JR((data.tempo||[]).filter(x=>/^riff:/.test(x.i)).map(x=>x.d).sort()[0]||null,0)},
+  {id:'r2',ph:1,name:'Seven Nation Army up to speed',how:'Logged clean at 110 bpm or faster',tool:{tab:'riffs',riff:'sna'},t:()=>JR(jt('riff:sna',110),tb('riff:sna')/110,tb('riff:sna')?'Best '+tb('riff:sna')+' bpm':'')},
+  {id:'r3',ph:1,name:'Three riffs at full tempo',how:'Three riffs at their target tempo',tool:{tab:'riffs'},t:()=>JR(riffsAtSpeedDate(3),riffsAtSpeed()/3,riffsAtSpeed()+' of 3 done')},
+  {id:'r4',ph:1,name:'Every note right',how:'Check me with the mic: every note right',tool:{tab:'riffs'},t:()=>{const c=(data.checks||[]).filter(x=>x.n>=5);const b=c.reduce((m,x)=>Math.max(m,x.hit/x.n),0);return JR(c.filter(x=>x.hit===x.n).map(x=>x.d).sort()[0]||null,b,c.length?Math.round(b*100)+'% best':'Mic edition only')}},
+  {id:'r5',ph:1,name:'Tight timing',how:'Check me: all notes right, within 30 ms of the click',tool:{tab:'riffs'},t:()=>{const c=(data.checks||[]).filter(x=>x.n>=5&&x.hit===x.n);const b=c.reduce((m,x)=>Math.min(m,Math.abs(x.med)),999);return JR(c.filter(x=>Math.abs(x.med)<=30).map(x=>x.d).sort()[0]||null,b<999?30/b:0,b<999?'Best '+b+' ms off':'')}},
+  {id:'r6',ph:2,name:'All five riffs at full tempo',how:'Every built-in riff at its target tempo',tool:{tab:'riffs'},t:()=>JR(riffsAtSpeedDate(RIFFS.length),riffsAtSpeed()/RIFFS.length,riffsAtSpeed()+' of '+RIFFS.length)}]},
+ {id:'barre',name:'Barre chords',stages:[
+  {id:'b1',ph:1,name:'E-shape barre',how:'Clean F, G and A barres (tick it yourself)',manual:true,tool:{tab:'chords'},t:()=>JR(null,0)},
+  {id:'b2',ph:1,name:'A-shape barre',how:'Clean Bm, C#m and Bb barres (tick it yourself)',manual:true,tool:{tab:'chords'},t:()=>JR(null,0)},
+  {id:'b3',ph:1,name:'Smooth changes',how:'F ↔ G: 30 clean changes in 60 s',tool:{tab:'chords',drill:'FG'},t:()=>{const b=(data.changes||[]).filter(r=>r.drill==='FG').reduce((m,r)=>Math.max(m,r.n),0);return JR(jc('FG',30),b/30,b?'Best '+b:'')}},
+  {id:'b4',ph:1,name:'Fast changes',how:'F ↔ G: 40 clean changes in 60 s',tool:{tab:'chords',drill:'FG'},t:()=>{const b=(data.changes||[]).filter(r=>r.drill==='FG').reduce((m,r)=>Math.max(m,r.n),0);return JR(jc('FG',40),b/40,b?'Best '+b:'')}},
+  {id:'b5',ph:1,name:'Name any barre chord',how:'Name the chord: 9/10 under 6 s each',tool:{tab:'neck',mode:'chord'},t:()=>{const b=jbest(r=>r.mode==='chord',r=>r.ok);return JR(jq(r=>r.mode==='chord'&&r.ok>=9&&r.ms<=6000),b/9,b?'Best '+b+'/10':'')}},
+  {id:'b6',ph:2,name:'Mixed shapes',how:'Bm ↔ C#m: 30 clean changes in 60 s',tool:{tab:'chords',drill:'BmCsm'},t:()=>{const b=(data.changes||[]).filter(r=>r.drill==='BmCsm').reduce((m,r)=>Math.max(m,r.n),0);return JR(jc('BmCsm',30),b/30,b?'Best '+b:'')}}]},
+ {id:'neck',name:'Fretboard',stages:[
+  {id:'n1',ph:1,name:'Anchor notes on E and A',how:'Find it, Name it or Play it at stage 1: 18/20',tool:{tab:'neck',mode:'find'},t:()=>{const b=jbest(r=>NECKM.includes(r.mode),r=>r.ok);return JR(jq(r=>NECKM.includes(r.mode)&&r.ok>=18),b/18,b?'Best '+b+'/20':'')}},
+  {id:'n2',ph:1,name:'All natural notes on E and A',how:'Stage 2 (all naturals): 18/20 at any speed',tool:{tab:'neck',mode:'find'},t:()=>{const b=jbest(r=>NECKM.includes(r.mode)&&rStage(r)>=2,r=>r.ok);return JR(jq(r=>NECKM.includes(r.mode)&&rStage(r)>=2&&r.ok>=18),b/18,b?'Best '+b+'/20':'')}},
+  {id:'n3',ph:1,name:'Quick on E and A',how:'Stage 2 or above: 18/20 under 3 s a note',tool:{tab:'neck',mode:'find'},t:()=>{const rs=(data.quiz||[]).filter(r=>NECKM.includes(r.mode)&&rStage(r)>=2);const ok=rs.filter(r=>r.ok>=18);const f=ok.length?3000/Math.min(...ok.map(r=>r.ms)):rs.length?.5*Math.max(...rs.map(r=>r.ok))/18:0;
+    const fast=rs.length?rs.reduce((m,r)=>r.ms<m.ms?r:m,rs[0]):null;return JR(jq(r=>NECKM.includes(r.mode)&&rStage(r)>=2&&r.ok>=18&&r.ms<=3000),f,ok.length?`Best ${(Math.min(...ok.map(r=>r.ms))/1000).toFixed(1)} s at 18+`:fast?`Fastest ${(fast.ms/1000).toFixed(1)} s, but ${fast.ok}/20`:'')}},
+  {id:'n4',ph:1,name:'All six strings',how:'All six strings, stage 2: 18/20',tool:{tab:'neck',mode:'find',set:'all'},t:()=>{const b=jbest(r=>NECKM.includes(r.mode)&&r.set==='all'&&rStage(r)>=2,r=>r.ok);return JR(jq(r=>NECKM.includes(r.mode)&&r.set==='all'&&rStage(r)>=2&&r.ok>=18),b/18,b?'Best '+b+'/20':'')}},
+  {id:'n5',ph:3,name:'Every fret, sharps and flats',how:'All six strings, stage 3: 18/20',tool:{tab:'neck',mode:'find',set:'all'},t:()=>{const b=jbest(r=>NECKM.includes(r.mode)&&r.set==='all'&&rStage(r)>=3,r=>r.ok);return JR(jq(r=>NECKM.includes(r.mode)&&r.set==='all'&&rStage(r)>=3&&r.ok>=18),b/18,b?'Best '+b+'/20':'')}},
+  {id:'n6',ph:3,name:'On the real neck',how:'Play it with the mic: 18/20 under 2.5 s a note',tool:{tab:'neck',mode:'play'},t:()=>{const rs=(data.quiz||[]).filter(r=>r.mode==='play'&&r.ok>=18);return JR(jq(r=>r.mode==='play'&&r.ok>=18&&r.ms<=2500),rs.length?2500/Math.min(...rs.map(r=>r.ms)):0,rs.length?`Best ${(Math.min(...rs.map(r=>r.ms))/1000).toFixed(1)} s`:'Mic edition only')}}]},
+ {id:'lead',name:'Lead',stages:[
+  {id:'l1',ph:1,name:'Pentatonic box 1',how:'Box 1 up and down, logged clean at 60 bpm',tool:{tab:'scales',root:9,type:'minpent',box:0},t:()=>JR(jt('scale:minpent:0',60),tb('scale:minpent:0')/60,tb('scale:minpent:0')?'Best '+tb('scale:minpent:0')+' bpm':'')},
+  {id:'l2',ph:1,name:'Box 1 at speed',how:'Box 1 logged clean at 90 bpm',tool:{tab:'scales',root:9,type:'minpent',box:0},t:()=>JR(jt('scale:minpent:0',90),tb('scale:minpent:0')/90,tb('scale:minpent:0')?'Best '+tb('scale:minpent:0')+' bpm':'')},
+  {id:'l3',ph:2,name:'Hammer-ons and pull-offs',how:'The exercise logged clean at 80 bpm',tool:{tab:'scales',lmode:'tech',tech:'hp'},t:()=>JR(jt('tech:hp',80),tb('tech:hp')/80,tb('tech:hp')?'Best '+tb('tech:hp')+' bpm':'')},
+  {id:'l4',ph:2,name:'Slides between boxes',how:'The exercise logged clean at 70 bpm',tool:{tab:'scales',lmode:'tech',tech:'slide'},t:()=>JR(jt('tech:slide',70),tb('tech:slide')/70,tb('tech:slide')?'Best '+tb('tech:slide')+' bpm':'')},
+  {id:'l5',ph:2,name:'Bends in tune',how:'Bend meter: 4 of 5 whole-tone bends in tune',tool:{tab:'scales',lmode:'tech',tech:'bend'},t:()=>{const b=(data.bends||[]).filter(x=>BENDS[x.k]&&BENDS[x.k].up===2);const best=b.reduce((m,x)=>Math.max(m,x.ok),0);return JR(b.filter(x=>x.ok>=4).map(x=>x.d).sort()[0]||null,best/4,b.length?'Best '+best+' of 5':'Mic edition only')}},
+  {id:'l6',ph:2,name:'The full lick',how:'The lick that uses everything, clean at 90 bpm',tool:{tab:'scales',lmode:'tech',tech:'lick'},t:()=>JR(jt('tech:lick',90),tb('tech:lick')/90,tb('tech:lick')?'Best '+tb('tech:lick')+' bpm':'')}]},
+ {id:'ear',name:'Ear',stages:[
+  {id:'e1',ph:1,name:'Major or minor',how:'Major or minor: 7/10',tool:{tab:'scales',lmode:'ear'},t:()=>{const b=jbest(r=>r.mode==='ear-mm',r=>r.ok);return JR(jq(r=>r.mode==='ear-mm'&&r.ok>=7),b/7,b?'Best '+b+'/10':'')}},
+  {id:'e2',ph:1,name:'Major or minor, reliably',how:'Major or minor: 9/10',tool:{tab:'scales',lmode:'ear'},t:()=>{const b=jbest(r=>r.mode==='ear-mm',r=>r.ok);return JR(jq(r=>r.mode==='ear-mm'&&r.ok>=9),b/9,b?'Best '+b+'/10':'')}},
+  {id:'e3',ph:2,name:'Intervals',how:'Intervals: 8/10',tool:{tab:'scales',lmode:'ear'},t:()=>{const b=jbest(r=>r.mode==='ear-int',r=>r.ok);return JR(jq(r=>r.mode==='ear-int'&&r.ok>=8),b/8,b?'Best '+b+'/10':'')}},
+  {id:'e4',ph:2,name:'Find the key',how:'Find the key: 4 of 5',tool:{tab:'scales',lmode:'ear'},t:()=>{const b=jbest(r=>r.mode==='ear-key',r=>r.ok);return JR(jq(r=>r.mode==='ear-key'&&r.ok>=4),b/4,b?'Best '+b+'/5':'')}},
+  {id:'e5',ph:3,name:'Call and response',how:'Call and response: reach 5 notes',tool:{tab:'scales',lmode:'ear'},t:()=>{const L=callLevel(),c=((data.ear||{}).call||[]).filter(x=>x.l>=5).map(x=>x.d).sort()[0];return JR(L>=5?(c||today()):null,(L-2)/3,'Level '+L+' notes')}},
+  {id:'e6',ph:3,name:'Play back what you hear',how:'Call and response: reach 6 notes',tool:{tab:'scales',lmode:'ear'},t:()=>{const L=callLevel(),c=((data.ear||{}).call||[]).filter(x=>x.l>=6).map(x=>x.d).sort()[0];return JR(L>=6?(c||today()):null,(L-2)/4,'Level '+L+' notes')}}]},
+ {id:'perf',name:'Performing',stages:[
+  {id:'p1',ph:1,name:'First loop',how:'RC-3 lesson 1, or tick it if you already loop',manual:true,tool:{tab:'songs',mode:'loop'},t:()=>JR((data.loopDone||{}).first||null,0)},
+  {id:'p2',ph:1,name:'Loop without drums',how:'RC-3 lesson 2, or tick it if you can already',manual:true,tool:{tab:'songs',mode:'loop'},t:()=>JR((data.loopDone||{}).nodrums||null,0)},
+  {id:'p3',ph:1,name:'Overdubs and layers',how:'RC-3 overdub and layering lessons, or tick it',manual:true,tool:{tab:'songs',mode:'loop'},t:()=>{const a=(data.loopDone||{}).undo,b=(data.loopDone||{}).layers;return JR(a&&b?(a>b?a:b):null,((a?1:0)+(b?1:0))/2)}},
+  {id:'p4',ph:2,name:'Your own lead fill',how:'A set song at Lead fill on the song board',tool:{tab:'songs'},t:()=>{const r=Object.values(data.rep||{}).filter(x=>x.s>=2).map(x=>x.d).sort()[0];return JR(r||null,0)}},
+  {id:'p5',ph:2,name:'A loopable song',how:'A set song at Loopable on the song board',tool:{tab:'songs'},t:()=>{const r=Object.values(data.rep||{}).filter(x=>x.s>=3).map(x=>x.d).sort()[0];return JR(r||null,0)}},
+  {id:'p6',ph:3,name:'Gig-ready',how:'A set song at Gig-ready: loop, play and sing it',tool:{tab:'songs'},t:()=>{const r=Object.values(data.rep||{}).filter(x=>x.s>=4).map(x=>x.d).sort()[0];return JR(r||null,0)}}]},
+ {id:'whole',name:'Whole neck',stages:[
+  {id:'w1',ph:2,name:'Boxes 1 and 2',how:'Minor pentatonic boxes 1 and 2 logged clean',tool:{tab:'scales',root:9,type:'minpent',box:1},t:()=>{const a=jt('scale:minpent:0',40),b=jt('scale:minpent:1',40);return JR(a&&b?(a>b?a:b):null,((a?1:0)+(b?1:0))/2)}},
+  {id:'w2',ph:2,name:'All five boxes',how:'All five minor pentatonic boxes logged clean',tool:{tab:'scales',root:9,type:'minpent',box:2},t:()=>{const ds=[0,1,2,3,4].map(k=>jt('scale:minpent:'+k,40));const n=ds.filter(Boolean).length;return JR(n===5?ds.sort().pop():null,n/5,n+' of 5')}},
+  {id:'w3',ph:2,name:'CAGED',how:'Arpeggios logged in all five CAGED shapes, or tick it',manual:true,tool:{tab:'scales',lmode:'whole',wmode:'caged',root:0},t:()=>{const sh=new Set((data.tempo||[]).filter(x=>/^arp:/.test(x.i)).map(x=>x.i.split(':')[1]));const d=sh.size>=5?(data.tempo||[]).filter(x=>/^arp:/.test(x.i)).map(x=>x.d).sort().pop():(data.self||{}).l3f||null;return JR(d,sh.size/5,sh.size+' of 5 shapes')}},
+  {id:'w4',ph:3,name:'Triad shapes',how:'Name the triad on G B e: 8/10',tool:{tab:'scales',lmode:'whole',wmode:'tshape'},t:()=>{const b=jbest(r=>r.mode==='triad',r=>r.ok);return JR(jq(r=>r.mode==='triad'&&r.ok>=8),b/8,b?'Best '+b+'/10':'')}},
+  {id:'w5',ph:3,name:'Triads anywhere',how:'Name the triad, mixed strings: 9/10',tool:{tab:'scales',lmode:'whole',wmode:'tshape'},t:()=>{const b=jbest(r=>r.mode==='triad'&&r.set==='all',r=>r.ok);return JR(jq(r=>r.mode==='triad'&&r.set==='all'&&r.ok>=9),b/9,b?'Best '+b+'/10':'')}},
+  {id:'w6',ph:3,name:'Chord tones over a song',how:'Triads over a set song, logged clean',tool:{tab:'scales',lmode:'whole',wmode:'triads'},t:()=>JR((data.tempo||[]).filter(x=>/^triad:/.test(x.i)).map(x=>x.d).sort()[0]||null,0)}]},
+ {id:'theory',name:'Theory & keys',stages:[
+  {id:'t1',ph:1,name:'The musical alphabet',how:'Note names with sharps and flats (reached with Fretboard stage 2, or tick it)',manual:true,tool:{tab:'neck',mode:'explore'},t:()=>JR(jq(r=>NECKM.includes(r.mode)&&rStage(r)>=2&&r.ok>=18),0)},
+  {id:'t2',ph:2,name:'Chord roots',how:'Name the chord: 7/10',tool:{tab:'neck',mode:'chord'},t:()=>{const b=jbest(r=>r.mode==='chord',r=>r.ok);return JR(jq(r=>r.mode==='chord'&&r.ok>=7),b/7,b?'Best '+b+'/10':'')}},
+  {id:'t3',ph:2,name:'Chord numbers',how:'Keys round 6/10 (I, IV, V and vi)',tool:{tab:'songs',mode:'keys'},t:()=>{const b=jbest(r=>r.mode==='key',r=>r.ok);return JR(jq(r=>r.mode==='key'&&r.ok>=6),b/6,b?'Best '+b+'/10':'')}},
+  {id:'t4',ph:2,name:'Keys of your songs',how:'Keys round 8/10',tool:{tab:'songs',mode:'keys'},t:()=>{const b=jbest(r=>r.mode==='key',r=>r.ok);return JR(jq(r=>r.mode==='key'&&r.ok>=8),b/8,b?'Best '+b+'/10':'')}},
+  {id:'t5',ph:3,name:'Which scale fits',how:'Keys round 9/10, including picking the lead scale',tool:{tab:'songs',mode:'keys'},t:()=>{const b=jbest(r=>r.mode==='key',r=>r.ok);return JR(jq(r=>r.mode==='key'&&r.ok>=9),b/9,b?'Best '+b+'/10':'')}},
+  {id:'t6',ph:3,name:'Relative minor, every time',how:'Keys round 10/10',tool:{tab:'songs',mode:'keys'},t:()=>{const b=jbest(r=>r.mode==='key',r=>r.ok);return JR(jq(r=>r.mode==='key'&&r.ok>=10),b/10,b?'Best '+b+'/10':'')}}]}];
+const JSTAGES=JTRACKS.flatMap(t=>t.stages.map((s,i)=>Object.assign(s,{track:t,idx:i})));
+const CHAPTERS=[{at:0,name:'Bedroom Player',tease:'Getting the basics under your fingers: first riffs, first barres, the anchor notes.'},
+ {at:6,name:'Band Rhythm',tease:'Rock-solid rhythm for the band: fast clean changes, riffs at full tempo, the neck on the low strings.'},
+ {at:14,name:'Riff Builder',tease:'Riffs at full tempo and in time, your first pentatonic phrases that land on the root.'},
+ {at:22,name:'Lead Apprentice',tease:'Hammer-ons, slides and bends in tune; boxes across the neck; hearing intervals.'},
+ {at:30,name:'Soloist',tease:'CAGED and triads, keys and the right scale for each song, a lead fill of your own.'},
+ {at:38,name:'Loop Performer',tease:'Building full songs on the RC-3 and playing lead over your own loops.'},
+ {at:46,name:'Complete Player',tease:'Gig-ready songs, the whole neck, and playing back what you hear.'}];
+const PHASE_NAME={1:'Now',2:'Next',3:'Later'};
+function jState(s){const r=s.t();const m=(data.jmanual||{})[s.id];const d=r.d||m||null;return {d,met:!!d,frac:d?1:r.frac,now:r.now,manual:!!m&&!r.d}}
+function jAll(){const st={};JSTAGES.forEach(s=>st[s.id]=jState(s));return st}
+function jCount(st){return JSTAGES.filter(s=>st[s.id].met).length}
+function jChapter(n){let c=0;CHAPTERS.forEach((ch,i)=>{if(n>=ch.at)c=i});return c}
+function jPhase(st){for(const p of [1,2,3])if(JSTAGES.some(s=>s.ph===p&&!st[s.id].met))return p;return 3}
+function jNext(st,k){const ph=jPhase(st);return JSTAGES.filter(s=>!st[s.id].met&&s.ph<=ph&&!s.manual).sort((a,b)=>st[b.id].frac-st[a.id].frac).slice(0,k||2)}
+function jDates(){const ds=data.jstages||{};return JSTAGES.filter(s=>ds[s.id]).map(s=>({s,d:ds[s.id]})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0)}
+/* record newly reached stages; celebrate unless silent */
+function checkJourney(silent){const st=jAll(),ds=Object.assign({},data.jstages||{});const fresh=[];const before=Object.keys(ds).length;
+  JSTAGES.forEach(s=>{if(st[s.id].met&&!ds[s.id]){ds[s.id]=st[s.id].d||today();fresh.push(s)}});
+  if(!fresh.length)return false;const first=!data.jstages;data.jstages=ds;
+  const n=Object.keys(ds).length,cb=jChapter(before),ca=jChapter(n);
+  if(first||silent){if(first)celebrate({size:'big',kicker:'Your journey',title:`${n} stages already reached`,sub:`Chapter ${ca+1}: ${CHAPTERS[ca].name}. See the Journey tab.`,icon:'★'});return true}
+  if(ca>cb)celebrate({size:'huge',kicker:`Chapter ${ca+1} of 7`,title:CHAPTERS[ca].name,sub:CHAPTERS[ca].tease,icon:'★'});
+  else fresh.forEach(s=>celebrate({size:'small',kicker:'Stage reached · '+s.track.name,title:s.name,icon:'✓'}));
+  return true}
+let JX={open:null,hl:null};
+function renderJourney(){const st=jAll(),n=jCount(st),ci=jChapter(n),ch=CHAPTERS[ci],nx=CHAPTERS[ci+1],ph=jPhase(st);
+  const pct=n/JSTAGES.length,C=2*Math.PI*38;
+  const ring=`<svg class="jring" viewBox="0 0 92 92" aria-hidden="true"><circle cx="46" cy="46" r="38" fill="none" stroke="rgba(243,237,226,.18)" stroke-width="8"/><circle cx="46" cy="46" r="38" fill="none" stroke="#f0a640" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(pct*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 46 46)"/><text x="46" y="45" text-anchor="middle" fill="#fff" class="jr1">${n}</text><text x="46" y="61" text-anchor="middle" class="jr2">of ${JSTAGES.length}</text></svg>`;
+  const dot=s=>{const x=st[s.id];return x.met?`<button class="jn done" data-jn="${s.id}" aria-label="${esc(s.name)}: reached"></button>`
+    :s===s.track.stages.find(q=>!st[q.id].met)?`<button class="jn cur" style="--p:${Math.round(x.frac*100)}%" data-jn="${s.id}" aria-label="${esc(s.name)}: in progress"><i></i></button>`
+    :`<button class="jn ${s.ph>ph?'later':''}" data-jn="${s.id}" aria-label="${esc(s.name)}: ahead"></button>`};
+  const map=JTRACKS.map(t=>`<div class="jtrk"><div class="jnm">${esc(t.name)}<small>${t.stages.filter(s=>st[s.id].met).length} of 6</small></div><div class="jstg">${t.stages.map(dot).join('')}</div></div>`).join('');
+  const close=jNext(st,2);
+  const list=JTRACKS.map(t=>{const d=t.stages.filter(s=>st[s.id].met).length,cur=t.stages.find(s=>!st[s.id].met);
+    return `<details class="jtk" data-jt="${t.id}" ${JX.open===t.id?'open':''}><summary><span><b>${esc(t.name)}</b><small>${d} of 6 · ${cur?'next: '+esc(cur.name):'complete'}</small></span><span class="jdots">${t.stages.map(s=>st[s.id].met?'●':s===cur?'◐':'○').join('')}</span></summary><ol>${t.stages.map((s,k)=>{const x=st[s.id],isCur=s===cur;
+      return `<li class="${x.met?'dn':isCur?'cu':'ah'} ${JX.hl===s.id?'hl':''}" id="js-${s.id}"><span class="ic">${x.met?'✓':k+1}</span><div><b>${esc(s.name)}</b><small>${esc(s.how)}${!x.met&&s.ph>ph?` · <span class="jph">${PHASE_NAME[s.ph]} phase</span>`:''}</small>${!x.met&&x.frac>0?`<div class="bar"><i style="width:${Math.round(x.frac*100)}%"></i></div>`:''}
+       <div class="jact">${x.met?(x.manual?`<button class="btn small ghost" data-jun="${s.id}">Untick</button>`:''):`<button class="btn small" data-jgo="${s.id}">Practise</button>${s.manual?`<button class="btn small ghost" data-jtick="${s.id}">I can do this</button>`:''}`}</div></div>
+       ${x.met?`<code>${fmtDate((data.jstages||{})[s.id]||x.d).replace(/^\w+, /,'')}</code>`:x.now?`<span class="jnow">${esc(x.now)}</span>`:''}</li>`}).join('')}</ol></details>`}).join('');
+  const dated=jDates();const chs=CHAPTERS.map((c,i)=>({c,i,items:dated.filter((x,k)=>jChapter(k)===i&&k>=c.at&&(i===CHAPTERS.length-1||k<CHAPTERS[i+1].at))}));
+  const story=chs.map(({c,i,items})=>{const past=i<ci,now=i===ci;if(!past&&!now&&i>ci+1)return '';
+    const span=items.length?`${fmtDate(items[0].d).replace(/^\w+, /,'')}${items.length>1?' to '+fmtDate(items[items.length-1].d).replace(/^\w+, /,''):''}`:'';
+    return `<div class="jch ${now?'now':past?'':'future'}"><span class="when">${now?`<span class="tag">You are here</span> `:past?'':'Next · '}${span}</span><h4>Chapter ${i+1} · ${esc(c.name)}</h4>
+      ${items.length?`<ul>${items.map(x=>`<li><code>${fmtDate(x.d).replace(/^\w+, /,'')}</code><span><b>${esc(x.s.name)}</b> · ${esc(x.s.track.name)}</span></li>`).join('')}</ul>`:''}
+      ${now&&nx?`<p>${nx.at-n} more stage${nx.at-n===1?'':'s'} to Chapter ${i+2}.${close.length?' Closest: '+close.map(s=>esc(s.name)).join(' and ')+'.':''}</p>`:''}${!past&&!now?`<p>${esc(c.tease)}</p>`:''}</div>`}).join('')+(ci<CHAPTERS.length-2?`<div class="jch future"><span class="when">Later</span><h4>Chapters ${ci+3} to 7</h4><p>${CHAPTERS.slice(ci+2).map(c=>esc(c.name)).join(' · ')}</p></div>`:'');
+  $('#j-body').innerHTML=`<div class="jhero"><div><span class="eyebrow">Chapter ${ci+1} of 7 · ${PHASE_NAME[ph]} phase</span><h3>${esc(ch.name)}</h3><p><b>${n} of ${JSTAGES.length} stages.</b> ${nx?`Next chapter, <b>${esc(nx.name)}</b>, at ${nx.at} stages: ${nx.at-n} to go.`:'Every chapter done.'}</p></div>${ring}</div>
+   <div class="card"><h3 class="sec" style="margin:0">The neck map · your eight skills</h3><div class="jmap"><div class="jfrets"><span></span><span></span><span></span><span></span><span></span><span></span></div>${map}</div>
+    <div class="legend"><span><i style="background:#f0a640"></i>Reached</span><span><i style="border:2px solid #f0a640;background:transparent"></i>In progress</span><span><i style="border:2px solid #9aa0a6;background:transparent"></i>Ahead</span></div>
+    <p class="muted small">Each row is a string and each dot a fret: you move up the neck as you improve. Tap a dot to see that stage.</p></div>
+   ${close.length?`<div class="card"><h3 class="sec" style="margin:0">Closest stages</h3>${close.map(s=>{const x=st[s.id];return `<div class="nextb"><button class="jn cur big" style="--p:${Math.round(x.frac*100)}%" data-jgo="${s.id}" aria-label="Practise ${esc(s.name)}"><i></i></button><div><span class="small"><b>${esc(s.track.name)} ${s.idx+1} · ${esc(s.name)}</b><br>${esc(s.how)}${x.now?` <span class="muted">(${esc(x.now)})</span>`:''}</span><div class="bar"><i style="width:${Math.round(x.frac*100)}%"></i></div></div></div>`}).join('')}</div>`:''}
+   <div class="card"><h3 class="sec" style="margin:0">Every stage · tap a skill to open it</h3><p class="muted small" style="margin:0">Work on several skills at once. Stages marked Next or Later belong to a later phase: you can still try them, and they count if you pass early.</p>${list}</div>
+   <h3 class="sec">The story so far</h3><div class="jstory">${story}</div>`}
+$('#v-journey').addEventListener('click',e=>{const dn=e.target.closest('[data-jn]');if(dn){const s=JSTAGES.find(x=>x.id===dn.dataset.jn);JX.open=s.track.id;JX.hl=s.id;renderJourney();const li=$('#js-'+s.id);if(li)li.scrollIntoView({behavior:'smooth',block:'center'});return}
+  const go=e.target.closest('[data-jgo]');if(go){const s=JSTAGES.find(x=>x.id===go.dataset.jgo);goTab(s.tool.tab,s.tool);return}
+  const tk=e.target.closest('[data-jtick]');if(tk){data.jmanual=Object.assign({},data.jmanual||{},{[tk.dataset.jtick]:today()});Store.save();renderJourney();return}
+  const un=e.target.closest('[data-jun]');if(un){const m=Object.assign({},data.jmanual||{});delete m[un.dataset.jun];data.jmanual=m;const d=Object.assign({},data.jstages||{});delete d[un.dataset.jun];data.jstages=d;Store.save();renderJourney();return}
+  const sm=e.target.closest('summary');if(sm){const dt=sm.parentElement;setTimeout(()=>{JX.open=dt.open?dt.dataset.jt:(JX.open===dt.dataset.jt?null:JX.open)},0)}});
 
 /* ================= REWARDS: celebrations, badges, competence score ================= */
 const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})();
@@ -2582,7 +2760,7 @@ function scheduleRewards(){if(!REW.booted)return;clearTimeout(REW.t);REW.t=setTi
 function checkRewards(silent){if(REW.busy)return;REW.busy=true;
   try{const first=!data.badges;const b=Object.assign({},data.badges||{});const fresh=[];
     BFAM.forEach(f=>{let top=-1;f.t.forEach((_,i)=>{const k=f.id+'-'+i;if(!b[k]&&famTierMet(f,i)){b[k]=today();top=i}});if(top>=0)fresh.push({f,i:top})});
-    const hc=updateCompHistory();const chd=checkChallenge(silent);if(chd)Store.save();
+    const hc=updateCompHistory();const chd=checkChallenge(silent);if(chd)Store.save();const jd=checkJourney(silent);if(jd){Store.save();if(TAB==='journey')renderJourney()}
     if(fresh.length||first){data.badges=b}
     if(fresh.length||first||hc){Store.save()}
     if(first&&fresh.length){celebrate({size:'big',kicker:'Badge cabinet open',title:`${fresh.reduce((n,x)=>n+x.i+1,0)} badges already earned`,sub:'From the practice you have logged so far. See them all on the Progress tab.',icon:'★'})}
@@ -2634,7 +2812,8 @@ $('#v-prog').addEventListener('click',e=>{const t=e.target.closest('[data-bfam]'
   $('#p-bdetail').innerHTML=`<b>${esc(f.name)}</b>${p.done?' · every tier earned':` · next: ${esc(p.goal)}${p.now?` (${esc(p.now)})`:''}`}<br><span class="muted">${tiers}</span>`});
 function renderTodayRewards(){const c=compNow(),wa=weekAgoComp(),dl=wa===null?null:c.total-wa;
   const nx=BFAM.map(f=>({f,p:famProgress(f)})).filter(x=>!x.p.done&&x.p.frac>0).sort((a,b)=>b.p.frac-a.p.frac).slice(0,3);
-  $('#t-rew').innerHTML=`<div class="row" style="justify-content:space-between"><b>Competence ${c.total}<span class="muted small"> / 100</span></b><span class="small ${dl>0?'delta-up':'muted'}">${dl===null?'':(dl>0?'+':'')+dl+' in 7 days'}</span></div>
+  const jst=jAll(),jn=jCount(jst),jci=jChapter(jn),jnx=CHAPTERS[jci+1];
+  $('#t-rew').innerHTML=`<button class="jtoday" data-act="gojourney"><span class="eyebrow">Chapter ${jci+1} of 7</span><b>${esc(CHAPTERS[jci].name)}</b><span class="small muted">${jn} of ${JSTAGES.length} stages${jnx?` · ${jnx.at-jn} to ${esc(jnx.name)}`:''}</span><div class="bar"><i style="width:${Math.round(jn/JSTAGES.length*100)}%"></i></div></button><div class="row" style="justify-content:space-between"><b>Competence ${c.total}<span class="muted small"> / 100</span></b><span class="small ${dl>0?'delta-up':'muted'}">${dl===null?'':(dl>0?'+':'')+dl+' in 7 days'}</span></div>
    ${nx.length?`<p class="small muted" style="margin-bottom:-4px">Closest badges</p>${nx.map(({f,p})=>`<div class="nextb">${medalSVG(p.nx,f.icon,36,true)}<div><span class="small"><b>${esc(f.name)} ${TIERS[p.nx].n}</b> · ${esc(p.goal)}${p.now?` <span class="muted">(${esc(p.now)})</span>`:''}</span><div class="bar"><i style="width:${Math.round(p.frac*100)}%"></i></div></div></div>`).join('')}`:''}
    <button class="btn small ghost" data-act="goprog" style="align-self:start">Badges and score</button>`}
 
@@ -2652,7 +2831,7 @@ function mergeData(o){if(!o||typeof o!=='object')throw new Error('bad');let adde
     if(e.note&&e.note!==m.note&&!(m.note||'').includes(e.note)){m.note=m.note?m.note+' / '+e.note:e.note;added++}});
   const obj=(k,pick)=>{const a=Object.assign({},data[k]||{});Object.entries(o[k]||{}).forEach(([kk,v])=>{if(!(kk in a)){a[kk]=v;added++}else{const w=pick?pick(a[kk],v):a[kk];if(K(w)!==K(a[kk])){a[kk]=w;added++}}});data[k]=a};
   obj('loopDone',(x,y)=>x<y?x:y);obj('rep',(x,y)=>(y.d||'')>(x.d||'')?y:x);obj('spots',(x,y)=>y.bpm>x.bpm?y:x);obj('self');obj('chal');obj('weekHits');obj('critHits');
-  obj('badges',(x,y)=>x<y?x:y);obj('comp');obj('nstats',(x,y)=>y[0]>x[0]?y:x);obj('songEdits');
+  obj('badges',(x,y)=>x<y?x:y);obj('jstages',(x,y)=>x<y?x:y);obj('jmanual',(x,y)=>x<y?x:y);obj('comp');obj('nstats',(x,y)=>y[0]>x[0]?y:x);obj('songEdits');
   {const ea=data.ear||{},eb=o.ear||{};const seen=new Set((ea.call||[]).map(K));const add=(eb.call||[]).filter(x=>!seen.has(K(x)));
     data.ear=Object.assign({},ea,{call:(ea.call||[]).concat(add).slice(-200),callLevel:Math.max(ea.callLevel||2,eb.callLevel||2)});added+=add.length}
   if((o.level||1)>data.level){data.level=o.level;data.levelStart=o.levelStart;added++}
@@ -2710,6 +2889,7 @@ function buildReport(){
   pbi.forEach(i=>{const se=tempoSeries(i),bb=tempoBest(i);lines.push(`${tempoLabel(i)}: best ${bb.bpm} bpm (${bb.d}), first ${se[0].b} bpm (${se[0].d}), ${(data.tempo||[]).filter(x=>x.i===i).length} logs`)})}
   lines.push('','SONG BOARD');SONGS.forEach(sg=>lines.push(`${sg.title}: ${STAGES[repStage(sg.id)]}`));
   {const c=compNow();lines.push('','COMPETENCE SCORE',`${c.total}/100 (`+AREAS.map(a=>`${a.name} ${c.a[a.id]}`).join(', ')+')');const h=data.comp||{},ks=Object.keys(h).sort();if(ks.length)lines.push('History: '+ks.slice(-14).map(k=>`${k.slice(5)} ${h[k][0]}`).join(', '))}
+  {const st=jAll(),n=jCount(st),ci=jChapter(n);lines.push('','JOURNEY',`Chapter ${ci+1} of 7: ${CHAPTERS[ci].name}. ${n} of ${JSTAGES.length} stages. Phase: ${PHASE_NAME[jPhase(st)]}.`);JTRACKS.forEach(t=>lines.push(`${t.name}: `+t.stages.map((s,i)=>`${st[s.id].met?'[x]':'[ ]'} ${i+1}. ${s.name}${!st[s.id].met&&st[s.id].now?' ('+st[s.id].now+')':''}`).join('; ')))}
   lines.push('','BADGES ('+Object.keys(data.badges||{}).length+' of '+badgeTotal()+')');BFAM.forEach(f=>{const k=famEarned(f);if(k>=0)lines.push(`${f.name}: ${TIERS[k].n}`)});
   {const ck=(data.checks||[]).slice(-10).reverse();lines.push('','MIC RIFF CHECKS (newest first)');if(!ck.length)lines.push('None yet.');ck.forEach(c=>lines.push(`${c.d} | ${tempoLabel(c.i)} at ${c.bpm} bpm | ${c.hit}/${c.n} notes | timing ${c.med} ms (+ late), spread ${c.spr} ms`))}
   {const bd=(data.bends||[]).slice(-5).reverse();if(bd.length){lines.push('','BEND METER SETS');bd.forEach(b=>lines.push(`${b.d} | ${BENDS[b.k].t} | ${b.ok}/5 in tune`))}}

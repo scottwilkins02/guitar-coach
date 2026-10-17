@@ -695,13 +695,14 @@ const LEVELS=[
  blocks:[
   {id:'warm',name:'Mixed barres',min:5,how:'F (E-shape, fret 1) to Bb (A-shape, fret 1). Keep the index barre down and move only the other fingers.',tool:{tab:'chords',drill:'FBb'},tl:'F ↔ Bb drill'},
   {id:'tech',name:'Bends and vibrato',min:7,how:'Bends against the reference note, then vibrato. Most players bend flat at first, so listen closely to the match.',tool:{tab:'scales',lmode:'tech',tech:'bend'},tl:'Open bends'},
-  {id:'neck',name:'CAGED and triads',min:8,how:'Alternate days: one key through all five CAGED shapes with arpeggios, or triads over a set song.',tool:{tab:'scales',lmode:'whole',wmode:'caged',root:0},tl:'Open whole neck'},
+  {id:'neck',name:'CAGED and triads',min:8,how:'Rotate: one key through the five CAGED shapes with arpeggios; the three triad shapes on one string set (Triad shapes: learn, up the neck, then a Name the triad round); or triads over a set song.',tool:{tab:'scales',lmode:'whole',wmode:'caged',root:0},tl:'Open whole neck'},
   {id:'jam',name:'Chord tone jam',min:7,how:'Pick a set song, play its loop, and aim for a blue-ringed chord tone the moment each chord changes. Start with Don’t Look Back in Anger.',tool:{tab:'songs',song:'dlbia'},tl:'Open song'},
   {id:'ear',name:'Call and response',min:3,how:'One round of call and response. Sing each phrase before you play it.',tool:{tab:'scales',lmode:'ear'},tl:'Open ear training'}],
  crit:[
   {id:'i3',type:'quiz',mode:'ear-int',set:'pentatonic intervals',ok:8,n:10,ms:60000,text:'Pentatonic intervals: 8/10 or better'},
   {id:'e3',type:'earcall',n:4,text:'Call and response: pass the 4-note level'},
   {id:'s3',type:'sessions',n:12,text:'12 practice days at this level'},
+  {id:'t3',type:'quiz',mode:'triad',set:'all',ok:9,n:10,ms:5000,text:'Name the triad, mixed strings: 9/10 under 5 s each'},
   {id:'l3e',type:'self',text:'4 of 5 whole-tone bends match the reference note'},
   {id:'l3f',type:'self',text:'Play a C major chord in all five CAGED shapes from memory'},
   {id:'l3g',type:'tempo',item:'tech:lick',bpm:90,text:'The lick that uses everything, clean at 90 bpm'},
@@ -1794,7 +1795,7 @@ function pushWin(text,quiet){data.wins=(data.wins||[]).concat([{d:today(),t:text
 /* Auto-credit: logged activity ticks the matching block on Today */
 function blockFor(kind,key){const L=lvl();if(!L||!L.blocks)return null;const tl=b=>b.tool||{};
   const strict=L.blocks.find(b=>{const t=tl(b);
-    if(kind==='quiz'){if(key==='chord')return t.tab==='neck'&&t.mode==='chord';if(key==='play')return t.tab==='neck'&&(t.mode==='play'||t.mode==='say'||t.mode==='find');if(key==='find'||key==='name')return t.tab==='neck'&&(t.mode==='find'||t.mode==='name');if(key==='key')return t.mode==='keys';if(String(key).startsWith('ear'))return t.lmode==='ear';return false}
+    if(kind==='quiz'){if(key==='chord')return t.tab==='neck'&&t.mode==='chord';if(key==='triad')return t.lmode==='whole';if(key==='play')return t.tab==='neck'&&(t.mode==='play'||t.mode==='say'||t.mode==='find');if(key==='find'||key==='name')return t.tab==='neck'&&(t.mode==='find'||t.mode==='name');if(key==='key')return t.mode==='keys';if(String(key).startsWith('ear'))return t.lmode==='ear';return false}
     if(kind==='say')return t.tab==='neck'&&t.mode==='say';
     if(kind==='drill')return t.tab==='chords'&&t.drill===key;
     if(kind==='loop')return t.tab==='songs'&&t.mode==='loop';
@@ -1806,7 +1807,7 @@ function blockFor(kind,key){const L=lvl();if(!L||!L.blocks)return null;const tl=
       if(k==='song')return t.tab==='songs'&&!t.mode}
     return false});
   if(strict)return strict;
-  if(kind==='quiz'&&['find','name','play','key','chord'].includes(key))return L.blocks.find(b=>tl(b).lmode==='ear')||null;
+  if(kind==='quiz'&&['find','name','play','key','chord','triad'].includes(key))return L.blocks.find(b=>tl(b).lmode==='ear')||null;
   if(kind==='drill')return L.blocks.find(b=>tl(b).tab==='chords')||null;
   return null}
 function credit(kind,key){const b=blockFor(kind,key);if(!b)return;const e=dayEntry(today(),true);if(e.blocks.includes(b.id))return;markBlock(b.id,true);toast('Ticked on Today: '+b.name)}
@@ -1937,7 +1938,7 @@ $('#l-tech').addEventListener('input',e=>{if(e.target.id==='tx-bpm'){TX.bpm=+e.t
 const WN={mode:'caged',root:0,q:'',shape:'C',bpm:70,set:'top',song:'pompeii',chord:0};
 let neckW=null;
 const CAGED={C:{str:1,lo:-3,hi:0},A:{str:1,lo:0,hi:2},G:{str:0,lo:-3,hi:0},E:{str:0,lo:0,hi:2},D:{str:2,lo:0,hi:3}};
-const TSETS={top:[3,4,5],mid:[2,3,4]};
+const TSETS={top:[3,4,5],mid:[2,3,4],low:[1,2,3],bass:[0,1,2]};
 function degLabel(iv){return {0:'R',2:'2',3:'b3',4:'3',5:'4',7:'5',10:'b7',11:'7'}[iv]||''}
 function cagedWindow(shape,root){const c=CAGED[shape];let rf=mod(root-OPEN[c.str]);if(rf+c.lo<0)rf+=12;return [rf+c.lo,rf+c.hi]}
 function cagedNotes(shape,root,q){const tones=QUAL[q].map(i=>mod(root+i));const [a,b]=cagedWindow(shape,root);const out=[];
@@ -1959,7 +1960,8 @@ function triadSongs(){return SONGS.filter(s=>{const l=songLoop(s);return l.lengt
 function showTriad(list,path,i){const v=path[i],c=list[i];if(!v||!c){neckW.set([]);return}const ss=TSETS[WN.set];
   neckW.set(ss.map((s,k)=>{const iv=mod(pcOf(s,v[k])-c.root);return {s,f:v[k],cls:iv===0?'root':'',label:degLabel(iv)}}));neckW.scrollTo(Math.min(...v)+1)}
 function renderWhole(){if(!neckW)neckW=new Neck($('#wn-neck'));const body=$('#wn-body'),after=$('#wn-after');
-  const modeSeg=`<div class="seg" data-wg="mode" style="align-self:start"><button data-v="caged">CAGED shapes</button><button data-v="triads">Triads over songs</button></div>`;
+  const modeSeg=`<div class="seg" data-wg="mode" style="align-self:start"><button data-v="caged">CAGED shapes</button><button data-v="tshape">Triad shapes</button><button data-v="triads">Triads over songs</button></div>`;
+  if(WN.mode==='tshape'){renderTShape(modeSeg);return}
   if(WN.mode==='caged'){
     const order=Object.keys(CAGED).map(sh=>({sh,w:cagedWindow(sh,WN.root)})).sort((a,b)=>a.w[0]-b.w[0]);
     const name=COMMON[WN.root]+(WN.q==='m'?'m':'');
@@ -1994,7 +1996,7 @@ function renderWhole(){if(!neckW)neckW=new Neck($('#wn-neck'));const body=$('#wn
    <p class="muted small">Play each triad on the beat while the loop strums the full chords. R is the root, 3 or b3 the third, 5 the fifth. Fret numbers run from the ${WN.set==='top'?'G string to the high e':'D string to the B string'}. Chord colours such as 7ths are played as plain major or minor triads.</p>
    ${tempoWidget('triad:'+s.id,'#wn-bpm')}</div>`}
 $('#l-whole').addEventListener('click',e=>{
-  const wg=e.target.closest('[data-wg] button');if(wg){const g=wg.parentElement.dataset.wg,v=wg.dataset.v;if(Player.on&&['arp','triad'].includes(Player.owner))Player.stop();
+  const wg=e.target.closest('[data-wg] button');if(wg){const g=wg.parentElement.dataset.wg,v=wg.dataset.v;if(Player.on&&['arp','triad','tshape'].includes(Player.owner))Player.stop();
     if(g==='mode'){WN.mode=v;WN.chord=0}if(g==='q')WN.q=v;if(g==='set')WN.set=v;renderWhole();return}
   const sh=e.target.closest('[data-wshape]');if(sh){if(Player.on&&Player.owner==='arp')Player.stop();WN.shape=sh.dataset.wshape;renderWhole();return}
   const ch=e.target.closest('[data-wchord]');if(ch){WN.chord=+ch.dataset.wchord;const s=SONGS.find(x=>x.id===WN.song),list=songLoop(s);showTriad(list,triadPath(list,WN.set),WN.chord);
@@ -2008,6 +2010,92 @@ $('#l-whole').addEventListener('click',e=>{
       onChord:i=>{WN.chord=i;showTriad(list,path,i);$$('#wn-body [data-wchord]').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.wchord===i))},
       onStop:()=>{const p=$('#wn-play');if(p)p.textContent='Play loop'}});a.textContent='Stop'}
 });
+/* Triad shapes trainer: the three shapes of every major and minor triad on each set of three strings */
+const TSET_NAME={top:'G B e',mid:'D G B',low:'A D G',bass:'E A D'};
+const INV_NAMES=['Root position','1st inversion','2nd inversion'];
+const INV_WHY=['root on the bottom','third on the bottom','fifth on the bottom'];
+const TT={view:'learn',root:2,q:'',set:'top',inv:'all',bpm:70,qset:'top',quiz:null,sum:null};
+function invOf(v,ss,root){const iv=mod(pcOf(ss[0],v[0])-root);return iv===0?0:(iv===3||iv===4)?1:2}
+function shapesFor(root,q,set){const ss=TSETS[set];return triadVoicings(root,q,set).map(v=>({v,inv:invOf(v,ss,root)})).sort((a,b)=>Math.min(...a.v)-Math.min(...b.v))}
+function tMarks(sh,root,set,labels){const ss=TSETS[set];return ss.map((s,k)=>{const iv=mod(pcOf(s,sh.v[k])-root);return {s,f:sh.v[k],cls:labels?(iv===0?'root':''):'q',label:labels?degLabel(iv):''}})}
+function tFrets(sh,set){const f=[-1,-1,-1,-1,-1,-1];TSETS[set].forEach((s,k)=>f[s]=sh.v[k]);return f}
+function tName(root,q){return COMMON[root]+(q==='m'?'m':'')}
+function tLong(root,q){return COMMON[root]+(q==='m'?' minor':' major')}
+function tSetSeg(g,v){return `<div class="seg" data-${g}>${Object.keys(TSET_NAME).map(k=>`<button data-v="${k}" aria-pressed="${k===v}">${TSET_NAME[k]}</button>`).join('')}${g==='ttqs'?`<button data-v="all" aria-pressed="${v==='all'}">Mixed</button>`:''}</div>`}
+function renderTShape(modeSeg){const body=$('#wn-body'),after=$('#wn-after');
+  const views=`<div class="seg" data-ttv style="align-self:start">${[['learn','Learn the shapes'],['drill','Up the neck'],['quiz','Name the triad']].map(([k,n])=>`<button data-v="${k}" aria-pressed="${TT.view===k}">${n}</button>`).join('')}</div>`;
+  if(TT.view==='quiz'){renderTQuiz(modeSeg,views);return}
+  const shapes=shapesFor(TT.root,TT.q,TT.set),show=TT.inv==='all'?shapes:shapes.filter(s=>s.inv===+TT.inv);
+  const third=TT.q==='m'?'b3 (minor third)':'3 (major third)';
+  body.innerHTML=`${modeSeg}${views}<div class="card">
+   <p>A triad is the three notes of a chord: the root (R), the third (${TT.q==='m'?'b3':'3'}) and the fifth (5). On any three neighbouring strings, each triad has exactly <b>three shapes</b>, named by which note is on the bottom string. They follow each other up the neck in a fixed order, then repeat 12 frets higher.</p>
+   <div class="grid2"><div class="ctl"><label class="lab" for="tt-root">Chord</label><select id="tt-root">${COMMON.map((n,pc)=>`<option value="${pc}" ${pc===TT.root?'selected':''}>${n}</option>`).join('')}</select></div>
+   <div class="ctl"><span class="lab">Type</span><div class="seg" data-ttq><button data-v="" aria-pressed="${TT.q===''}">Major</button><button data-v="m" aria-pressed="${TT.q==='m'}">Minor</button></div></div></div>
+   <div class="ctl"><span class="lab">Strings</span>${tSetSeg('tts',TT.set)}</div>
+   ${TT.view==='learn'?`<div class="ctl"><span class="lab">Shapes up the neck</span><div class="chips">${shapes.map(s=>`<button class="chip" data-tti="${s.inv}" aria-pressed="${String(TT.inv)===String(s.inv)}">${INV_NAMES[s.inv]} · frets ${s.v.join('-')}</button>`).filter((x,i,a)=>a.indexOf(x)===i).join('')}<button class="chip" data-tti="all" aria-pressed="${TT.inv==='all'}">All</button></div></div>`:''}</div>`;
+  neckW.set(show.flatMap(s=>tMarks(s,TT.root,TT.set,true)));if(show.length)neckW.scrollTo(TT.inv==='all'?Math.min(...show[0].v)+3:Math.min(...show[0].v)+1);
+  const name=tLong(TT.root,TT.q);
+  if(TT.view==='learn'){after.innerHTML=`<div class="card"><h3 class="sec" style="margin:0">${esc(name)} on the ${TSET_NAME[TT.set]} strings</h3>
+    <ul class="tips"><li><b>Root position:</b> root on the bottom string, then the ${third}, then the 5.</li><li><b>1st inversion:</b> the ${TT.q==='m'?'b3':'3'} on the bottom, root on top.</li><li><b>2nd inversion:</b> the 5 on the bottom, root in the middle.</li>
+    <li><b>Find them from notes you know.</b> Every shape contains the root (red). Find the root note on one of the three strings, then build the shape around it.</li>
+    <li>Major and minor shapes differ by one note: the third. Flatten the 3 by one fret and the major shape becomes minor.</li></ul>
+    <div class="row"><button class="btn pri" data-ttact="hear">Hear ${TT.inv==='all'?'all three':'this shape'}</button></div>
+    <p class="muted small">Next: Up the neck to play the shapes in order with the click, then Name the triad to test yourself.</p></div>`;return}
+  const playing=Player.on&&Player.owner==='tshape';const seq=shapes.filter(s=>Math.max(...s.v)<=15);
+  after.innerHTML=`<div class="card"><h3 class="sec" style="margin:0">Up the neck</h3><p class="small">Strum each shape on the beat, two beats each, up the neck and back down. Say its name as you go: “root, first, second”. The next shape shows as a dashed outline.</p>
+   <div class="chord-now"><b id="tt-now">${seq.length?INV_NAMES[seq[0].inv]:''}</b><span id="tt-next" class="muted"></span></div>
+   <div class="row"><button class="btn pri" data-ttact="drill" id="tt-play">${playing?'Stop':'Play'}</button><div class="beats" id="tt-beats"><i></i><i></i><i></i><i></i></div><span class="timer" id="tt-bpmout">${TT.bpm} bpm</span></div>
+   <div class="ctl"><label class="lab" for="tt-bpm">Tempo</label><input type="range" id="tt-bpm" min="40" max="160" value="${TT.bpm}"></div>
+   ${tempoWidget(`tshape:${TT.set}:${TT.q==='m'?'m':'M'}`,'#tt-bpm')}</div>`}
+function tDrill(){if(Player.on&&Player.owner==='tshape'){Player.stop();return}
+  const up=shapesFor(TT.root,TT.q,TT.set).filter(s=>Math.max(...s.v)<=15);if(!up.length)return;const seq=up.concat(up.slice(1,-1).reverse());
+  const events=seq.map((s,i)=>({at:i*2,idx:i,strum:{frets:tFrets(s,TT.set),dir:'d',vel:.75}}));
+  const show=i=>{const s=seq[i],n=seq[(i+1)%seq.length];neckW.set([...tMarks(s,TT.root,TT.set,true).map(m=>Object.assign(m,{cls:m.cls+' on'})),...tMarks(n,TT.root,TT.set,true).filter(m=>!s.v.some((f,k)=>TSETS[TT.set][k]===m.s&&f===m.f)).map(m=>Object.assign(m,{cls:'ghost'}))]);neckW.scrollTo(Math.min(...s.v)+1);
+    const a=$('#tt-now'),b=$('#tt-next');if(a)a.textContent=INV_NAMES[s.inv];if(b)b.textContent='next: '+INV_NAMES[n.inv]};
+  show(0);Player.start({beats:seq.length*2,events},{bpm:TT.bpm,loop:true,click:true,owner:'tshape',
+    onStep:e=>{if(e.idx!==undefined)show(e.idx)},onBeat:b=>{$$('#tt-beats i').forEach((x,k)=>x.classList.toggle('on',k===b%4))},
+    onStop:()=>{const p=$('#tt-play');if(p)p.textContent='Play';$$('#tt-beats i').forEach(x=>x.classList.remove('on'))}});
+  const p=$('#tt-play');if(p)p.textContent='Stop'}
+function tHear(){const shapes=shapesFor(TT.root,TT.q,TT.set),show=TT.inv==='all'?shapes:shapes.filter(s=>s.inv===+TT.inv);const c=audio();let t=c.currentTime+.05;
+  show.slice(0,4).forEach(s=>{strum(tFrets(s,TT.set),t,'d',.8);TSETS[TT.set].forEach((st,k)=>pluck(OPEN[st]+s.v[k],t+.7+k*.22,.7));t+=1.6})}
+/* quiz */
+function tGenQ(){const sets=TT.qset==='all'?Object.keys(TSET_NAME):[TT.qset];let tries=0;
+  while(tries++<50){const set=sets[Math.floor(Math.random()*sets.length)],root=Math.floor(Math.random()*12),q=Math.random()<.5?'':'m';
+    const sh=shapesFor(root,q,set).filter(s=>Math.min(...s.v)>=1&&Math.max(...s.v)<=14);if(!sh.length)continue;const s=sh[Math.floor(Math.random()*sh.length)];
+    const ans=tName(root,q),bottom=pcOf(TSETS[set][0],s.v[0]),opts=new Set([ans,tName(root,q===''?'m':'')]);
+    if(bottom!==root)opts.add(tName(bottom,q));TSETS[set].forEach((st,k)=>{const pc=pcOf(st,s.v[k]);if(opts.size<4&&pc!==root)opts.add(tName(pc,q===''?'m':''))});
+    while(opts.size<4)opts.add(tName(Math.floor(Math.random()*12),Math.random()<.5?'':'m'));
+    return {set,root,q,s,ans,opts:[...opts].sort(()=>Math.random()-.5)}}}
+function renderTQuiz(modeSeg,views){const body=$('#wn-body'),after=$('#wn-after');const Z=TT.quiz;
+  if(!Z){const best=data.quiz.filter(r=>r.mode==='triad'&&r.set===TT.qset).reduce((m,r)=>!m||r.ok>m.ok||(r.ok===m.ok&&r.ms<m.ms)?r:m,null);
+    body.innerHTML=`${modeSeg}${views}<div class="card"><p class="prompt">Name the triad</p><p>A triad shape lights up with no labels. Find the root and name the chord. 10 shapes, timed. Tip: work out which shape it is first (where would the root be?), then name the root note.</p>
+     <div class="ctl"><span class="lab">Strings</span>${tSetSeg('ttqs',TT.qset)}</div>
+     ${TT.sum?`<p class="small"><b>Last round:</b> ${TT.sum.ok}/10 at ${(TT.sum.ms/1000).toFixed(1)} s each.</p>`:''}
+     <button class="btn pri" data-ttact="qstart" style="align-self:start">Start round</button>${best?`<p class="muted small">Best on these strings: ${best.ok}/10 at ${(best.ms/1000).toFixed(1)} s.</p>`:''}</div>`;
+    after.innerHTML='';neckW.set([]);return}
+  const q=Z.cur;body.innerHTML=`${modeSeg}${views}<div class="card"><p class="eyebrow">Shape ${Z.i+1} of 10 · ${TSET_NAME[q.set]} strings</p><p class="prompt">Which chord?</p>
+   <div class="opts">${q.opts.map(o=>`<button class="btn ${Z.picked?(o===q.ans?'right':o===Z.picked?'wrong':''):''}" data-ttans="${esc(o)}" ${Z.picked?'disabled':''}>${esc(o.replace(/m$/,' minor').replace(/^([A-G][#b]?)$/,'$1 major'))}</button>`).join('')}</div>
+   ${Z.picked?`<p class="fb ${Z.picked===q.ans?'ok':'bad'}">${Z.picked===q.ans?'Yes.':'Not quite.'} ${esc(tLong(q.root,q.q))}, ${INV_NAMES[q.s.inv].toLowerCase()} (${INV_WHY[q.s.inv]}).</p><button class="btn pri" data-ttact="qnext" style="align-self:start">${Z.i>=9?'See result':'Next'}</button>`:''}</div>`;
+  after.innerHTML='';neckW.set(tMarks(q.s,q.root,q.set,!!Z.picked));neckW.scrollTo(Math.min(...q.s.v)+1)}
+function tQuizStart(){TT.quiz={i:0,ok:0,ms:0,picked:null,cur:tGenQ(),t0:performance.now()};TT.sum=null;audio();renderWhole()}
+function tAnswer(o){const Z=TT.quiz;if(!Z||Z.picked)return;Z.picked=o;Z.ms+=performance.now()-Z.t0;if(o===Z.cur.ans)Z.ok++;strum(tFrets(Z.cur.s,Z.cur.set),audio().currentTime+.03,'d',.8);renderWhole()}
+function tNext(){const Z=TT.quiz;Z.i++;if(Z.i>=10){const res={d:today(),mode:'triad',set:TT.qset,ok:Z.ok,n:10,ms:Math.round(Z.ms/10)};
+    const pb=data.quiz.filter(r=>r.mode==='triad'&&r.set===res.set).reduce((m,r)=>!m||r.ok>m.ok||(r.ok===m.ok&&r.ms<m.ms)?r:m,null);
+    data.quiz.push(res);data.quiz=data.quiz.slice(-400);Store.save();if(pb&&(res.ok>pb.ok||(res.ok===pb.ok&&res.ms<pb.ms)))pushWin(`New best Name the triad (${TSET_NAME[res.set]||'mixed'}): ${res.ok}/10 at ${(res.ms/1000).toFixed(1)} s`);
+    credit('quiz','triad');checkTargets();TT.sum=res;TT.quiz=null;renderWhole();return}
+  Z.picked=null;Z.cur=tGenQ();Z.t0=performance.now();renderWhole()}
+$('#l-whole').addEventListener('click',e=>{if(WN.mode!=='tshape')return;
+  const v=e.target.closest('[data-ttv] button');if(v){if(Player.on&&Player.owner==='tshape')Player.stop();TT.view=v.dataset.v;TT.quiz=null;renderWhole();return}
+  const q=e.target.closest('[data-ttq] button');if(q){if(Player.on&&Player.owner==='tshape')Player.stop();TT.q=q.dataset.v;renderWhole();return}
+  const s=e.target.closest('[data-tts] button');if(s){if(Player.on&&Player.owner==='tshape')Player.stop();TT.set=s.dataset.v;TT.inv='all';renderWhole();return}
+  const qs=e.target.closest('[data-ttqs] button');if(qs){TT.qset=qs.dataset.v;renderWhole();return}
+  const iv=e.target.closest('[data-tti]');if(iv){TT.inv=iv.dataset.tti;renderWhole();return}
+  const an=e.target.closest('[data-ttans]');if(an){tAnswer(an.dataset.ttans);return}
+  const a=e.target.closest('[data-ttact]');if(!a)return;const k=a.dataset.ttact;
+  if(k==='hear')tHear();if(k==='drill')tDrill();if(k==='qstart')tQuizStart();if(k==='qnext')tNext()});
+$('#l-whole').addEventListener('change',e=>{if(e.target.id==='tt-root'){if(Player.on&&Player.owner==='tshape')Player.stop();TT.root=+e.target.value;TT.inv='all';renderWhole()}});
+$('#l-whole').addEventListener('input',e=>{if(e.target.id==='tt-bpm'){TT.bpm=+e.target.value;$('#tt-bpmout').textContent=TT.bpm+' bpm';if(Player.on&&Player.owner==='tshape')Player.setBpm(TT.bpm)}});
+
 $('#l-whole').addEventListener('change',e=>{
   if(e.target.id==='wn-key'){if(Player.on&&Player.owner==='arp')Player.stop();WN.root=+e.target.value;renderWhole()}
   if(e.target.id==='wn-song'){if(Player.on&&Player.owner==='triad')Player.stop();WN.song=e.target.value;WN.chord=0;renderWhole()}});
@@ -2329,7 +2417,7 @@ document.addEventListener('input',e=>{if(e.target.id!=='sp-a'&&e.target.id!=='sp
 function todayQ(modes){const t=today();return (data.quiz||[]).filter(r=>r.d===t&&modes.includes(r.mode))}
 function todayTempo(re){const t=today();return (data.tempo||[]).filter(x=>x.d===t&&re.test(x.i))}
 function lastDate(area){const q=m=>(data.quiz||[]).filter(r=>m.includes(r.mode)).map(r=>r.d),tp=re=>(data.tempo||[]).filter(x=>re.test(x.i)).map(x=>x.d);
-  const ds={neck:q(['find','name','play']),chords:[...q(['chord']),...(data.changes||[]).map(r=>r.d)],rhythm:tp(/^riff:/),lead:tp(/^(scale|tech|arp|triad):/),ear:q(['ear-mm','ear-int','ear-key','key']),perf:[...Object.values(data.loopDone||{}),...Object.values(data.rep||{}).map(r=>r.d)]}[area]||[];
+  const ds={neck:q(['find','name','play']),chords:[...q(['chord']),...(data.changes||[]).map(r=>r.d)],rhythm:tp(/^riff:/),lead:[...tp(/^(scale|tech|arp|triad|tshape):/),...q(['triad'])],ear:q(['ear-mm','ear-int','ear-key','key']),perf:[...Object.values(data.loopDone||{}),...Object.values(data.rep||{}).map(r=>r.d)]}[area]||[];
   return ds.sort().pop()||null}
 function weakestRiff(){return RIFFS.map(r=>{const b=tempoBest('riff:'+r.id);return {r,fr:(b?b.bpm:0)/r.to}}).filter(x=>x.fr<1).sort((a,b)=>a.fr-b.fr)[0]}
 function areaItem(area){
@@ -2423,6 +2511,7 @@ const BFAM=[
  {id:'cname',name:'Chord namer',icon:'C',unit:'out of 10, Name the chord',v:()=>bestOk('chord',10),t:[6,8,10]},
  {id:'pb',name:'Beat yourself',icon:'↑',unit:'tempo personal bests',v:tempoPBCount,t:[1,5,15,40]},
  {id:'speed',name:'Up to speed',icon:'♪',unit:'riffs at full target tempo',v:riffsAtSpeed,t:[1,3,5]},
+ {id:'triads',name:'Triad finder',icon:'△',unit:'out of 10, Name the triad',v:()=>bestOk('triad',10),t:[6,8,10]},
  {id:'ears',name:'Good ears',icon:'E',unit:'out of 10, Major or minor',v:()=>bestOk('ear-mm',10),t:[7,9,10]},
  {id:'ints',name:'Interval hunter',icon:'I',unit:'out of 10, Intervals',v:()=>bestOk('ear-int',10),t:[6,8,10]},
  {id:'echo',name:'Echo',icon:'R',unit:'notes in Call and response',v:callLevel,t:[3,4,5,6]},
@@ -2454,8 +2543,9 @@ function compAt(D){
   const tp={};(data.tempo||[]).forEach(x=>{if(x.d<=D)tp[x.i]=Math.max(tp[x.i]||0,x.b)});
   const rhythm=100*RIFFS.reduce((s,r)=>s+clamp01((tp['riff:'+r.id]||0)/r.to),0)/RIFFS.length;
   const leadT={'scale:minpent:0':90,'tech:hp':80,'tech:lick':90};
-  const leadF=Object.keys(tp).filter(i=>/^(scale|tech|arp|triad):/.test(i)).map(i=>clamp01(tp[i]/(leadT[i]||100)));
-  const lead=100*topAvg(leadF,6);
+  const leadF=Object.keys(tp).filter(i=>/^(scale|tech|arp|triad|tshape):/.test(i)).map(i=>clamp01(tp[i]/(leadT[i]||100)));
+  const tq=qz.filter(r=>r.mode==='triad').map(r=>{const a=r.ok/r.n;return 100*a*a*sp(r.ms,2000,9000)*age(r)});
+  const lead=80*topAvg(leadF,6)+.2*topAvg(tq,3);
   const ea=m=>qz.filter(r=>r.mode===m).map(r=>r.ok/r.n*age(r));
   const cl=(data.ear&&data.ear.call||[]).filter(x=>x.d<=D).reduce((m,x)=>Math.max(m,x.l),2);
   const ear=35*topAvg(ea('ear-mm'),3)+25*topAvg(ea('ear-int'),3)+15*topAvg(ea('key').concat(ea('ear-key')),3)+25*clamp01((cl-2)/4);
@@ -2522,7 +2612,7 @@ function renderCompCard(){const c=compNow(),wa=weekAgoComp(),dl=wa===null?null:c
   ${compChartHTML()}
   <div class="areas">${AREAS.map(a=>`<div class="area"><span>${a.name}</span><div class="bar"><i style="width:${c.a[a.id]}%"></i></div><b>${c.a[a.id]}</b></div>`).join('')}</div>
   <p class="small"><b>Biggest gain available:</b> ${weakest.name}. ${AREA_TIP[weakest.id]}</p>
-  <details class="small"><summary>How the score works</summary><p class="muted" style="margin-top:6px">It rebuilds from your logged results: Fretboard from your best three Find it and Name it rounds (accuracy, speed, stage, and whether it was all six strings); Chords from your best change count (50 in 60 s scores full) and Name the chord rounds; Riffs from each riff’s best tempo against its target; Lead from scale and technique tempos; Ear from ear-training rounds and your Call and response level; Performing from the song board and loop lessons. Weights: Fretboard, Chords and Lead 20 each, Riffs and Performing 15, Ear 10. Rounds over 4 weeks old count a little less. It is a progress gauge built for this app, not a graded exam, so use it to compare you with you.</p></details>`}
+  <details class="small"><summary>How the score works</summary><p class="muted" style="margin-top:6px">It rebuilds from your logged results: Fretboard from your best three Find it and Name it rounds (accuracy, speed, stage, and whether it was all six strings); Chords from your best change count (50 in 60 s scores full) and Name the chord rounds; Riffs from each riff’s best tempo against its target; Lead from scale, technique and triad tempos plus Name the triad rounds; Ear from ear-training rounds and your Call and response level; Performing from the song board and loop lessons. Weights: Fretboard, Chords and Lead 20 each, Riffs and Performing 15, Ear 10. Rounds over 4 weeks old count a little less. It is a progress gauge built for this app, not a graded exam, so use it to compare you with you.</p></details>`}
 const AREA_TIP={neck:'A Find it round a day, moving up a stage once you hit 18/20.',chords:'Log a change drill and a Name the chord round.',rhythm:'Take each riff on the Riffs tab up towards its target tempo and log it.',lead:'Log clean tempos on scale boxes and technique exercises in the Lead tab.',ear:'A Major or minor round and a few Call and response phrases.',perf:'Move songs along the song board and work through the loop lessons.'};
 function renderBadges(){const tiles=BFAM.map(f=>{const p=famProgress(f),k=p.k;
   return `<button class="btile ${k<0?'locked':''}" data-bfam="${f.id}">${medalSVG(Math.max(0,k),f.icon,44,k<0)}<span style="min-width:0"><b>${esc(f.name)}</b><small>${k<0?'Locked':TIERS[k].n}${p.done?' · complete':''}</small>${p.done?'':`<div class="bar"><i style="width:${Math.round(p.frac*100)}%"></i></div>`}</span></button>`}).join('');
@@ -2577,7 +2667,7 @@ $('#p-sync').addEventListener('click',e=>{const a=e.target.closest('[data-act]')
 
 /* ================= REPORT / BACKUP ================= */
 function lastNDays(n){const out=[];const d=new Date();for(let i=0;i<n;i++){const x=new Date(d);x.setDate(d.getDate()-i);out.push(iso(x))}return out}
-const MODE_NAME={play:'Play it',find:'Find it',name:'Name it',chord:'Name the chord',key:'Keys round','ear-mm':'Major or minor','ear-int':'Intervals','ear-key':'Find the key'};
+const MODE_NAME={triad:'Name the triad',play:'Play it',find:'Find it',name:'Name it',chord:'Name the chord',key:'Keys round','ear-mm':'Major or minor','ear-int':'Intervals','ear-key':'Find the key'};
 function buildReport(){
   const L=lvl(),t=today(),lines=[];
   const days=Object.entries(data.days).filter(([k,e])=>e.blocks.length||e.note).sort((a,b)=>a[0]<b[0]?1:-1);

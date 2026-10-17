@@ -2541,6 +2541,11 @@ function mergeData(o){if(!o||typeof o!=='object')throw new Error('bad');let adde
   if((o.level||1)>data.level){data.level=o.level;data.levelStart=o.levelStart;added++}
   data.nstage=Math.max(data.nstage||1,o.nstage||1);if(typeof data.micLat!=='number'&&typeof o.micLat==='number')data.micLat=o.micLat;
   return added}
+function parseMerge(raw){let t=String(raw||'').trim();
+  if(/%7B|%22|%5B/i.test(t)){try{t=decodeURIComponent(t.replace(/\+/g,' '))}catch(e){try{t=unescape(t)}catch(e2){}}}
+  const i=t.indexOf('COACH-MERGE:');if(i>=0)t=t.slice(i+12);
+  if(t.includes('---BACKUP START---'))return parseBackup(t);
+  const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw new Error('none');const o=JSON.parse(t.slice(a,b+1));if(!o.days)throw new Error('not coach');return o}
 function renderSyncCard(){const w=$('#ps-where');if(!w)return;
   w.innerHTML=inClaude()?`This is your <b>main Coach</b>, synced to your account. The microphone can’t work inside Claude, so mic practice happens in the mic edition.${MIC_URL?` <a href="${MIC_URL}" target="_blank" rel="noopener">Open the mic edition</a>.`:''} After a mic session there, tap Copy my progress, come back here and tap Merge.`
     :`This is the <b>mic edition</b>. Progress here is saved on this phone only. After practising, tap Copy my progress, open your main Coach in Claude, and tap Merge from the other copy. Merging twice is safe: nothing is counted twice.`}
@@ -2548,9 +2553,9 @@ $('#p-sync').addEventListener('click',e=>{const a=e.target.closest('[data-act]')
   if(act==='mcopy'){const txt='COACH-MERGE:'+JSON.stringify(data);const done=ok=>{out.innerHTML=`<p class="small ${ok?'':'muted'}">${ok?'Copied. Now open the other copy, go to Progress and tap Merge from the other copy.':'Couldn’t copy automatically. Select all the text below and copy it.'}</p>${ok?'':`<textarea rows="4" readonly style="font:500 11px var(--fm)">${esc(txt)}</textarea>`}`};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false));else done(false)}
   if(act==='mopen'){out.innerHTML=`<label class="lab" for="ps-in">Paste what you copied from the other copy</label><textarea id="ps-in" rows="4" style="font:500 11px var(--fm)"></textarea><div class="row"><button class="btn small pri" data-act="mgo">Merge</button><button class="btn small ghost" data-act="mcancel">Cancel</button></div><p class="fb bad" id="ps-err"></p>`;
-    if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(t=>{if(t&&t.startsWith('COACH-MERGE:'))$('#ps-in').value=t}).catch(()=>{})}}
+    if(navigator.clipboard&&navigator.clipboard.readText){navigator.clipboard.readText().then(t=>{if(t&&/COACH-MERGE|%7B|^\s*\{/.test(t))$('#ps-in').value=t}).catch(()=>{})}}
   if(act==='mcancel')out.innerHTML='';
-  if(act==='mgo'){const raw=$('#ps-in').value.trim();try{const o=raw.startsWith('COACH-MERGE:')?JSON.parse(raw.slice(12)):parseBackup(raw);const n=mergeData(o);Store.save();checkTargets(true);
+  if(act==='mgo'){const raw=$('#ps-in').value.trim();try{const o=parseMerge(raw);const n=mergeData(o);Store.save();checkTargets(true);
       out.innerHTML=`<p class="small fb ok">${n?`Merged ${n} new item${n===1?'':'s'}.`:'Nothing new: this copy already had all of it.'}</p>`;toast(n?'Progress merged':'Already up to date');renderProg()}
     catch(err){$('#ps-err').textContent='That isn’t something this app can merge. Copy it again with Copy my progress, then paste the whole thing.'}}});
 

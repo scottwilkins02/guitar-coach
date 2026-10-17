@@ -83,6 +83,7 @@ p{margin:0}
 .chips.grid12{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
 .chips.grid12 .chip{padding:0 4px;min-width:0}
 .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+a.btn{text-decoration:none;color:inherit}
 .row.btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.row.btns>.btn{width:100%}
 .chip{appearance:none;white-space:nowrap;border:1px solid var(--line);background:var(--panel);border-radius:999px;min-height:40px;padding:0 14px;font-weight:700;font-size:14px;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
@@ -414,6 +415,7 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
     <p class="muted small">No sound? Tap Sound check. It plays a note and tells you whether the audio engine is running.</p>
   </div>
   <div class="card"><h3 class="sec" style="margin:0">Recent practice</h3><div class="hist" id="p-hist"></div></div>
+  <div class="card" id="p-ghsync" hidden></div>
   <div class="card" id="p-sync">
     <h3 class="sec" style="margin:0">Main Coach and mic edition</h3>
     <p id="ps-where"></p>
@@ -776,7 +778,7 @@ const Store={ref:null,mode:'local',saving:false,again:false,t:0,
     }catch(e){this.mode='local';setSync()}
   },
   async pull(){if(!this.ref||this.saving)return;try{const s=await this.ref.get();if(s.exists){data=Object.assign(defaults(),JSON.parse(JSON.stringify(s.data())));this.saveLocal();checkRewards(true);renderAll()}}catch(e){}},
-  save(){this.saveLocal();scheduleRewards();clearTimeout(this.t);if(!this.ref)return;setSync('busy');this.t=setTimeout(()=>this.flush(),700)},
+  save(){this.saveLocal();scheduleRewards();syncSoon();clearTimeout(this.t);if(!this.ref)return;setSync('busy');this.t=setTimeout(()=>this.flush(),700)},
   async flush(){
     if(!this.ref)return;if(this.saving){this.again=true;return}
     this.saving=true;
@@ -788,6 +790,7 @@ const Store={ref:null,mode:'local',saving:false,again:false,t:0,
 function setSync(state){const el=$('#sync');
   if(state==='busy'){el.className='sync busy';el.lastChild.textContent='Saving';return}
   if(Store.mode==='account'){el.className='sync ok';el.lastChild.textContent='Synced to your account'}
+  else if(typeof SY!=='undefined'&&SY.cfg&&SY.cfg.gist){el.className=SY.err?'sync':'sync ok';el.lastChild.textContent=SY.err?'Sync paused':'Mic edition · synced via GitHub'}
   else{el.className='sync';el.lastChild.textContent=window.claude?'Saved on this device':'Mic edition · saved on this phone'}}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2200)}
 
@@ -1312,7 +1315,7 @@ function renderProg(){
   $('#p-pb').innerHTML=pbItems.length?pbItems.map(i=>({i,b:tempoBest(i),s:tempoSeries(i)})).sort((a,b)=>a.b.d<b.b.d?1:-1).map(x=>`<div class="pbrow"><span class="small" style="min-width:0">${esc(tempoLabel(x.i))}<br><span class="muted">${fmtDate(x.b.d)} · started at ${x.s[0].b}</span></span><b>${x.b.bpm}</b>${sparkHTML(x.s)||'<span class="muted small">1 day logged</span>'}</div>`).join(''):'<p class="muted small">No tempos logged yet. On any riff, song, scale or technique, play a clean run with the click and tap “I played it clean”.</p>';
   $('#p-rep').innerHTML=`<div class="repgrid">${STAGES.map((n,i)=>{const ss=SONGS.filter(x=>repStage(x.id)===i);return `<div class="repcol"><h5>${i+1}. ${n} · ${ss.length}</h5>${ss.length?`<span class="small">${ss.map(x=>esc(x.title)).join(', ')}</span>`:'<span class="muted small">None</span>'}</div>`}).join('')}</div><p class="muted small">Move a song along on its page in the Songs tab.</p>`;
   {const ws=(data.wins||[]).slice(-15).reverse();$('#p-wins').innerHTML=ws.length?`<div class="wins">${ws.map(w=>`<div><code>${fmtDate(w.d)}</code><span>${esc(w.t)}</span></div>`).join('')}</div>`:'<p class="muted small">Personal bests, weekly targets, new levels and finished lessons will appear here.</p>'}
-  renderCompCard();renderBadges();renderSyncCard();
+  renderCompCard();renderBadges();renderSyncCard();renderGhSync();
   $('#p-bdetail').innerHTML='<span class="muted">Tap a badge to see every tier and what earns the next one.</span>';
   $('#p-reset').innerHTML=confirmReset?`<div class="confirm"><span>Erase all progress, notes and saved riffs?</span><button class="btn small" data-act="resetyes">Erase</button><button class="btn small ghost" data-act="resetno">Keep</button></div>`:`<button class="btn small ghost" data-act="reset">Reset all progress</button>`;
 }
@@ -2662,7 +2665,7 @@ function parseMerge(raw){let t=String(raw||'').trim();
   const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw new Error('none');const o=JSON.parse(t.slice(a,b+1));if(!o.days)throw new Error('not coach');return o}
 function renderSyncCard(){const w=$('#ps-where');if(!w)return;
   w.innerHTML=inClaude()?`This is your <b>main Coach</b>, synced to your account. The microphone can’t work inside Claude, so mic practice happens in the mic edition.${MIC_URL?` <a href="${MIC_URL}" target="_blank" rel="noopener">Open the mic edition</a>.`:''} After a mic session there, tap Copy my progress, come back here and tap Merge.`
-    :`${navigator.standalone?'':`<b>Install it:</b> tap Safari’s Share button, then <b>Add to Home Screen</b>. Then always open it from the icon. The home-screen app keeps its own storage, separate from Safari, so merge your progress once more after installing.<br><br>`}This is the <b>mic edition</b>. Progress here is saved on this phone only. After practising, tap Copy my progress, open your main Coach in Claude, and tap Merge from the other copy. Merging twice is safe: nothing is counted twice.`}
+    :`${(typeof SY!=='undefined'&&SY.cfg)?'Automatic sync is on (card above), so you only need this to move progress to or from the main Coach in Claude.<br><br>':''}${navigator.standalone?'':`<b>Install it:</b> tap Safari’s Share button, then <b>Add to Home Screen</b>. Then always open it from the icon. The home-screen app keeps its own storage, separate from Safari, so merge your progress once more after installing.<br><br>`}This is the <b>mic edition</b>. Progress here is saved on this phone only. After practising, tap Copy my progress, open your main Coach in Claude, and tap Merge from the other copy. Merging twice is safe: nothing is counted twice.`}
 $('#p-sync').addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act,out=$('#ps-out');
   if(act==='mcopy'){const txt='COACH-MERGE:'+JSON.stringify(data);const done=ok=>{out.innerHTML=`<p class="small ${ok?'':'muted'}">${ok?'Copied. Now open the other copy, go to Progress and tap Merge from the other copy.':'Couldn’t copy automatically. Select all the text below and copy it.'}</p>${ok?'':`<textarea rows="4" readonly style="font:500 11px var(--fm)">${esc(txt)}</textarea>`}`};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false));else done(false)}
@@ -2739,6 +2742,54 @@ $('#p-export').addEventListener('click',e=>{const a=e.target.closest('[data-act]
 });
 
 
+/* ================= DEVICE SYNC via a GitHub gist (mic edition only) ================= */
+/* The token lives in its own localStorage key, never inside `data`, so it is never copied, merged or reported. */
+const SYNC_KEY='coach-sync-v1',GIST_FILE='guitar-coach-progress.json',GIST_DESC='Guitar Coach sync (managed by the app, do not edit)';
+const SY={cfg:null,busy:false,t:0,last:null,err:'',suppress:false,again:false};
+function syLoad(){try{SY.cfg=JSON.parse(localStorage.getItem(SYNC_KEY)||'null')}catch(e){SY.cfg=null}}
+function sySave(){try{if(SY.cfg)localStorage.setItem(SYNC_KEY,JSON.stringify(SY.cfg));else localStorage.removeItem(SYNC_KEY)}catch(e){}}
+async function gh(path,opt){opt=opt||{};const h={'Accept':'application/vnd.github+json','Authorization':'Bearer '+SY.cfg.token};if(opt.body)h['Content-Type']='application/json';
+  const r=await fetch('https://api.github.com'+path,{method:opt.method||'GET',headers:h,body:opt.body,cache:'no-store'});
+  if(!r.ok){const e=new Error('GitHub '+r.status);e.status=r.status;throw e}return r.status===204?null:r.json()}
+function syErr(e){return e.status===401?'GitHub didn’t accept the token. It may have expired or been revoked: connect again with a new one.'
+  :e.status===403?'GitHub refused the request. Check the token has the gist box ticked.':e.status===404?'The sync gist is missing. Connect again and the app will make a new one.'
+  :'Couldn’t reach GitHub. You may be offline; the app will try again.'}
+async function syConnect(token){const tk=String(token||'').trim();if(!tk){SY.err='Paste your token first.';return false}SY.cfg={token:tk};SY.err='';
+  try{let id=null;for(let page=1;page<=5&&!id;page++){const list=await gh('/gists?per_page=100&page='+page);const g=list.find(x=>x.files&&x.files[GIST_FILE]);if(g)id=g.id;if(list.length<100)break}
+    if(!id){const g=await gh('/gists',{method:'POST',body:JSON.stringify({description:GIST_DESC,public:false,files:{[GIST_FILE]:{content:JSON.stringify(data)}}})});id=g.id}
+    SY.cfg.gist=id;sySave();await syncNow();return !SY.err}
+  catch(e){SY.err=syErr(e);SY.cfg=null;sySave();return false}}
+async function syncNow(){if(!SY.cfg||!SY.cfg.gist)return;if(SY.busy){SY.again=true;return}SY.busy=true;clearTimeout(SY.t);setSync('busy');
+  try{const g=await gh('/gists/'+SY.cfg.gist);const f=g.files&&g.files[GIST_FILE];let txt=f?f.content:'';
+    if(f&&f.truncated){const r=await fetch(f.raw_url,{cache:'no-store'});txt=await r.text()}
+    let n=0;if(txt){try{n=mergeData(JSON.parse(txt))}catch(e){}}
+    if(n){SY.suppress=true;Store.save();SY.suppress=false;checkTargets(true)}
+    await gh('/gists/'+SY.cfg.gist,{method:'PATCH',body:JSON.stringify({files:{[GIST_FILE]:{content:JSON.stringify(data)}}})});
+    SY.last=new Date();SY.err='';if(n){toast(`Synced ${n} update${n===1?'':'s'} from your other device`);if(!(PL.active||RC.on||BM.on||(Player.on)))renderAll()}}
+  catch(e){SY.err=syErr(e)}
+  finally{SY.busy=false;setSync();if(TAB==='prog')renderGhSync();if(SY.again){SY.again=false;syncSoon(1500)}}}
+function syncSoon(ms){if(!SY.cfg||SY.suppress)return;clearTimeout(SY.t);SY.t=setTimeout(syncNow,ms||6000)}
+function renderGhSync(){const el=$('#p-ghsync');if(!el)return;if(inClaude()){el.hidden=true;return}el.hidden=false;
+  const t=SY.last?SY.last.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):null;
+  el.innerHTML=SY.cfg&&SY.cfg.gist?`<h3 class="sec" style="margin:0">Sync between devices</h3>
+    <p><b>Connected to GitHub.</b> ${t?`Last synced at ${t}.`:'Not synced yet this session.'} Your progress syncs when the app opens, when you come back to it, and a few seconds after each change. Set up the same on your other devices.</p>
+    ${SY.err?`<p class="fb bad small">${esc(SY.err)}</p>`:''}
+    <div class="row btns"><button class="btn pri" data-sy="now">${SY.busy?'Syncing…':'Sync now'}</button><button class="btn ghost" data-sy="off">Disconnect this device</button></div>
+    <p class="muted small">Progress merges in both directions and nothing is counted twice. A reset or a deleted riff on one device won’t remove it from the others.</p>`
+   :`<h3 class="sec" style="margin:0">Sync between devices</h3>
+    <p>Keep your iPhone and iPad in step automatically. The app stores your progress in a secret gist (a small file) on your GitHub account. Secret gists aren’t listed or searchable; only someone with its exact link could see it, and it holds practice stats only.</p>
+    <ol class="tips"><li>Tap <b>Create a token</b>. GitHub opens with the right setting already ticked (<b>gist</b> only).</li><li>Set <b>Expiration</b> to <b>No expiration</b> (or a year), scroll down, tap <b>Generate token</b>, then copy it.</li><li>Paste it below and tap <b>Connect</b>. Do the same on each device; you can use the same token.</li></ol>
+    <a class="btn" href="https://github.com/settings/tokens/new?scopes=gist&description=Guitar%20Coach%20sync" target="_blank" rel="noopener">Create a token</a>
+    <label class="lab" for="sy-tok" style="margin-top:6px">Token</label><input type="password" id="sy-tok" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="ghp_…" style="width:100%;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:10px 12px;font-size:16px">
+    ${SY.err?`<p class="fb bad small">${esc(SY.err)}</p>`:''}
+    <button class="btn pri" data-sy="connect" style="width:100%">${SY.busy?'Connecting…':'Connect'}</button>
+    <p class="muted small">The token is saved only on this device, never in your progress or reports. It can only read and write gists, not your code. Revoke it any time at github.com/settings/tokens.</p>`}
+document.addEventListener('click',async e=>{const b=e.target.closest('[data-sy]');if(!b)return;const k=b.dataset.sy;
+  if(k==='connect'){b.textContent='Connecting…';const ok=await syConnect(($('#sy-tok')||{}).value);renderGhSync();if(ok)toast('Sync connected');}
+  if(k==='now')syncNow();
+  if(k==='off'){SY.cfg=null;sySave();SY.err='';SY.last=null;setSync();renderGhSync();toast('This device is disconnected from sync')}});
+document.addEventListener('visibilitychange',()=>{if(!SY.cfg)return;if(document.visibilityState==='visible')syncNow();else if(SY.t){clearTimeout(SY.t);syncNow()}});
+
 /* ================= layout: balance segmented controls into even rows ================= */
 const _mc=document.createElement('canvas').getContext('2d');
 function balanceSegs(){document.querySelectorAll('.seg').forEach(seg=>{const bs=[...seg.children].filter(b=>b.tagName==='BUTTON'),n=bs.length;if(!n)return;const W=seg.clientWidth;if(!W)return;
@@ -2752,7 +2803,7 @@ addEventListener('resize',balanceSoon);if(document.fonts&&document.fonts.ready)d
 
 /* ================= boot ================= */
 goTab('today');
-Store.init().then(()=>{REW.booted=true;checkRewards(true);renderAll()});
+Store.init().then(()=>{REW.booted=true;checkRewards(true);renderAll();if(!inClaude()){syLoad();if(SY.cfg)syncNow()}});
 </script>
 
 </body></html>

@@ -186,7 +186,10 @@ nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel
 nav.tabs .in{max-width:980px;margin:0 auto;display:grid;grid-template-columns:repeat(7,1fr)}
 nav.tabs button{appearance:none;border:0;background:none;color:var(--muted);font:700 11px/1.1 var(--fb);padding:8px 2px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-height:58px}
 nav.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-nav.tabs button[aria-current="page"]{color:var(--accent-ink)}
+nav.tabs button{position:relative}
+nav.tabs button[aria-current="page"]{color:var(--accent-ink);font-weight:800}
+nav.tabs button[aria-current="page"] svg{background:var(--accent-soft);border-radius:999px;padding:4px 14px;margin:-4px -14px;box-sizing:content-box;stroke-width:2.3}
+nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--accent)}
 .toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:700;z-index:9;max-width:calc(100% - 32px);text-align:center}
 .confirm{border:1px solid var(--bad);border-radius:8px;padding:10px 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .small{font-size:13px}
@@ -1960,7 +1963,7 @@ function triadSongs(){return SONGS.filter(s=>{const l=songLoop(s);return l.lengt
 function showTriad(list,path,i){const v=path[i],c=list[i];if(!v||!c){neckW.set([]);return}const ss=TSETS[WN.set];
   neckW.set(ss.map((s,k)=>{const iv=mod(pcOf(s,v[k])-c.root);return {s,f:v[k],cls:iv===0?'root':'',label:degLabel(iv)}}));neckW.scrollTo(Math.min(...v)+1)}
 function renderWhole(){if(!neckW)neckW=new Neck($('#wn-neck'));const body=$('#wn-body'),after=$('#wn-after');
-  const modeSeg=`<div class="seg" data-wg="mode" style="align-self:start"><button data-v="caged">CAGED shapes</button><button data-v="tshape">Triad shapes</button><button data-v="triads">Triads over songs</button></div>`;
+  const modeSeg=`<div class="seg" data-wg="mode" style="align-self:start">${[['caged','CAGED shapes'],['tshape','Triad shapes'],['triads','Triads over songs']].map(([k,n])=>`<button data-v="${k}" aria-pressed="${WN.mode===k}">${n}</button>`).join('')}</div>`;
   if(WN.mode==='tshape'){renderTShape(modeSeg);return}
   if(WN.mode==='caged'){
     const order=Object.keys(CAGED).map(sh=>({sh,w:cagedWindow(sh,WN.root)})).sort((a,b)=>a.w[0]-b.w[0]);

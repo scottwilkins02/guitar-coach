@@ -75,11 +75,15 @@ p{margin:0}
 .btn.ghost{background:transparent}
 .btn.small{min-height:36px;padding:0 12px;font-size:14px}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
-.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--panel)}
-.seg button{flex:1 1 auto;appearance:none;border:0;border-right:1px solid var(--line);background:transparent;min-height:40px;padding:0 12px;font-weight:700;font-size:14px;cursor:pointer}
-.seg button:last-child{border-right:0}
+/* segmented controls: an even grid with hairlines between every cell; columns balanced in JS (balanceSegs) */
+.seg{display:grid;grid-template-columns:repeat(var(--cols,4),minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;width:100%;align-self:stretch}
+.seg button{appearance:none;border:0;border-radius:0;background:var(--panel);min-height:44px;padding:6px 8px;font-weight:700;font-size:14px;line-height:1.15;cursor:pointer;text-align:center;min-width:0;display:flex;align-items:center;justify-content:center}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips.grid12{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.chips.grid12 .chip{padding:0 4px;min-width:0}
+.chip{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.row.btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.row.btns>.btn{width:100%}
 .chip{appearance:none;white-space:nowrap;border:1px solid var(--line);background:var(--panel);border-radius:999px;min-height:40px;padding:0 14px;font-weight:700;font-size:14px;cursor:pointer}
 .chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent-ink)}
 label.lab{font:700 12px/1 var(--fm);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
@@ -920,7 +924,7 @@ function renderNeckView(){
       <div class="ctl"><span class="lab">Strings</span><div class="seg" data-g="strs"><button data-v="EA">Low E + A</button><button data-v="all">All six</button></div></div>
     </div>
     ${Q.names==='heat'?`<p class="small">${data.nstats&&Object.keys(data.nstats).length?'Green: right at least 9 times in 10 and under 2.5 s. Orange: getting there. Red: often wrong or over 4 s. Only notes you have been quizzed on show.':'Play some Find it or Name it rounds first. Your speed on each note will show here.'}</p>`:''}
-    <div class="ctl"><span class="lab">Show every place one note lives</span><div class="chips">${COMMON.map((n,pc)=>`<button class="chip" data-focus="${pc}" aria-pressed="${Q.focus===pc}">${n}</button>`).join('')}</div></div>`;
+    <div class="ctl"><span class="lab">Show every place one note lives</span><div class="chips grid12">${COMMON.map((n,pc)=>`<button class="chip" data-focus="${pc}" aria-pressed="${Q.focus===pc}">${n}</button>`).join('')}</div></div>`;
     markSeg(P,'names',Q.names);markSeg(P,'strs',Q.strs);
     drawExplore();
     I.innerHTML=`${ALPHA_TIP}<br><br><b>Octave shapes.</b> A note on the low E string repeats two strings over and two frets up on the D string. A note on the A string repeats two strings over, two frets up on the G string.`;
@@ -1493,7 +1497,7 @@ function renderKeys(){
   const mine=SONGS.filter(s=>(!s.key.minor&&s.key.root===k)||(s.key.minor&&s.key.root===rel));
   const rs=data.quiz.filter(r=>r.mode==='key');const best=rs.slice().sort((a,b)=>b.ok-a.ok||a.ms-b.ms)[0];
   body.innerHTML=`<div class="card"><p>A key is a family of chords that sound at home together. In any major key, six chords do most of the work. Numbers name them by position, so the same pattern works in every key: Pompeii’s chorus is IV I vi V.</p>
-   <div class="ctl"><span class="lab">Major key</span><div class="chips">${[0,7,2,9,4,11,6,1,8,3,10,5].map(r=>`<button class="chip" data-key="${r}" aria-pressed="${r===k}">${keyName(r)}</button>`).join('')}</div></div>
+   <div class="ctl"><span class="lab">Major key</span><div class="chips grid12">${[0,7,2,9,4,11,6,1,8,3,10,5].map(r=>`<button class="chip" data-key="${r}" aria-pressed="${r===k}">${keyName(r)}</button>`).join('')}</div></div>
    <div class="kchords">${ch.map((c,i)=>`<button class="btn" data-kc="${i}"><small>${c.num}</small><b>${esc(c.label)}</b></button>`).join('')}</div>
    <p class="small"><b>Relative minor:</b> ${spell(rel,fl)}m (the vi chord). ${keyName(k)} major pentatonic and ${spell(rel,fl)} minor pentatonic are the same five notes, so either box works for lead in this key.</p>
    <p class="small"><b>Your songs here:</b> ${mine.length?mine.map(s=>`<button class="btn small ghost" data-song-open="${s.id}">${esc(s.title)}</button>`).join(' '):'none in this key.'}</p>
@@ -1963,7 +1967,7 @@ function triadSongs(){return SONGS.filter(s=>{const l=songLoop(s);return l.lengt
 function showTriad(list,path,i){const v=path[i],c=list[i];if(!v||!c){neckW.set([]);return}const ss=TSETS[WN.set];
   neckW.set(ss.map((s,k)=>{const iv=mod(pcOf(s,v[k])-c.root);return {s,f:v[k],cls:iv===0?'root':'',label:degLabel(iv)}}));neckW.scrollTo(Math.min(...v)+1)}
 function renderWhole(){if(!neckW)neckW=new Neck($('#wn-neck'));const body=$('#wn-body'),after=$('#wn-after');
-  const modeSeg=`<div class="seg" data-wg="mode" style="align-self:start">${[['caged','CAGED shapes'],['tshape','Triad shapes'],['triads','Triads over songs']].map(([k,n])=>`<button data-v="${k}" aria-pressed="${WN.mode===k}">${n}</button>`).join('')}</div>`;
+  const modeSeg=`<div class="seg" data-wg="mode">${[['caged','CAGED shapes'],['tshape','Triad shapes'],['triads','Triads over songs']].map(([k,n])=>`<button data-v="${k}" aria-pressed="${WN.mode===k}">${n}</button>`).join('')}</div>`;
   if(WN.mode==='tshape'){renderTShape(modeSeg);return}
   if(WN.mode==='caged'){
     const order=Object.keys(CAGED).map(sh=>({sh,w:cagedWindow(sh,WN.root)})).sort((a,b)=>a.w[0]-b.w[0]);
@@ -2026,7 +2030,7 @@ function tName(root,q){return COMMON[root]+(q==='m'?'m':'')}
 function tLong(root,q){return COMMON[root]+(q==='m'?' minor':' major')}
 function tSetSeg(g,v){return `<div class="seg" data-${g}>${Object.keys(TSET_NAME).map(k=>`<button data-v="${k}" aria-pressed="${k===v}">${TSET_NAME[k]}</button>`).join('')}${g==='ttqs'?`<button data-v="all" aria-pressed="${v==='all'}">Mixed</button>`:''}</div>`}
 function renderTShape(modeSeg){const body=$('#wn-body'),after=$('#wn-after');
-  const views=`<div class="seg" data-ttv style="align-self:start">${[['learn','Learn the shapes'],['drill','Up the neck'],['quiz','Name the triad']].map(([k,n])=>`<button data-v="${k}" aria-pressed="${TT.view===k}">${n}</button>`).join('')}</div>`;
+  const views=`<div class="seg" data-ttv>${[['learn','Learn the shapes'],['drill','Up the neck'],['quiz','Name the triad']].map(([k,n])=>`<button data-v="${k}" aria-pressed="${TT.view===k}">${n}</button>`).join('')}</div>`;
   if(TT.view==='quiz'){renderTQuiz(modeSeg,views);return}
   const shapes=shapesFor(TT.root,TT.q,TT.set),show=TT.inv==='all'?shapes:shapes.filter(s=>s.inv===+TT.inv);
   const third=TT.q==='m'?'b3 (minor third)':'3 (major third)';
@@ -2281,7 +2285,8 @@ function renderPlay(){const P=$('#n-panel');
    <div class="grid2"><div class="ctl"><span class="lab">Strings</span><div class="seg" data-g="set"><button data-v="EA">Low E + A</button><button data-v="all">All six</button></div></div>
    <div class="ctl"><span class="lab">Stage</span>${stageSeg('stage')}</div></div>
    <div class="row"><button class="chip" data-act="plspeak" aria-pressed="${PL.speak}">Speak each note</button></div>
-   <div class="row"><button class="btn pri" data-act="plstart">Start round</button><button class="btn small ghost" data-act="micchk">Mic check</button><button class="btn small ghost" data-act="miccal">Calibrate timing</button></div>
+   <button class="btn pri" data-act="plstart" style="width:100%">Start round</button>
+   <div class="row btns"><button class="btn" data-act="micchk">Mic check</button><button class="btn" data-act="miccal">Calibrate timing</button></div>
    <p class="small ${PL.msgc||'muted'}" id="pl-msg">${PL.msg||'Uses the microphone. Play single notes cleanly; let each one ring. A quiet room helps.'}</p>
    ${bp?`<p class="muted small">Best at this stage on these strings: ${bp.ok}/20 at ${(bp.ms/1000).toFixed(1)} s a note.</p>`:''}`;
   markSeg(P,'set',Q.set);markSeg(P,'stage',Q.stage);neckN.set([])}
@@ -2455,10 +2460,10 @@ function renderSmart(){const el=$('#t-smart');if(!el)return;const p=smartPlan(),
   const row=(k,lab,it)=>{const d=it.done();return `<div class="smart ${d?'done':''}"><span class="st ${d?'met':''}">${d?'✓':''}</span><div><span class="eyebrow">${lab}</span><b>${esc(it.name||it.text)}</b>${it.how?`<span class="small">${esc(it.how)}</span>`:''}</div><button class="btn small" data-act="smart" data-k="${k}">Open</button></div>`};
   const AN=Object.fromEntries(AREAS.map(a=>[a.id,a.name]));
   el.innerHTML=`<div class="row" style="justify-content:space-between"><b>Today’s mix</b><span class="muted small">Picked from your scores</span></div>
-   ${row('focus','Focus · '+AN[p.focus.area]+' (your lowest score)',p.focus)}
-   ${row('review','Review · '+AN[p.review.area]+' (longest since you practised it)',p.review)}
+   ${row('focus','Focus · '+AN[p.focus.area],p.focus)}
+   ${row('review','Review · '+AN[p.review.area],p.review)}
    <div class="smart ${cd?'done':''}"><span class="st ${cd?'met':''}">${cd?'✓':'★'}</span><div><span class="eyebrow">Daily challenge</span><b>${esc(ch.text)}</b></div><button class="btn small" data-act="smart" data-k="chal">Open</button></div>
-   <p class="small muted">Do these alongside your level blocks below. Mixing skills in one session, and coming back to older ones, keeps them from fading.</p>`}
+   <p class="small muted">Focus is your lowest-scoring area. Review is the one you have left longest. Do these alongside your level blocks below.</p>`}
 
 /* ================= REWARDS: celebrations, badges, competence score ================= */
 const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})();
@@ -2732,6 +2737,18 @@ $('#p-export').addEventListener('click',e=>{const a=e.target.closest('[data-act]
     catch(err){$('#p-resterr').textContent='That isn’t a backup this app can read. Paste the whole report, including the BACKUP START and END lines.'}}
   if(act==='restoreyes'){data=Object.assign(defaults(),restorePending.obj);restorePending=null;restoreOpen=false;applyTone();Store.save();$('#p-exout').innerHTML='';toast('Backup restored');renderProg()}
 });
+
+
+/* ================= layout: balance segmented controls into even rows ================= */
+const _mc=document.createElement('canvas').getContext('2d');
+function balanceSegs(){document.querySelectorAll('.seg').forEach(seg=>{const bs=[...seg.children].filter(b=>b.tagName==='BUTTON'),n=bs.length;if(!n)return;const W=seg.clientWidth;if(!W)return;
+  const cs=getComputedStyle(bs[0]);_mc.font=`${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;const need=Math.max(...bs.map(b=>_mc.measureText(b.textContent.trim()).width))+22;
+  let c=1;for(let k=n;k>=1;k--){if(W/k>=need){c=k;break}}
+  if(n%c){for(let k=c-1;k>=Math.max(2,Math.ceil(c/2));k--){if(n%k===0){c=k;break}}}
+  seg.style.setProperty('--cols',c);bs.forEach(b=>b.style.gridColumn='');const r=n%c;if(r)bs[n-1].style.gridColumn=`span ${c-r+1}`})}
+let _bal=0;function balanceSoon(){cancelAnimationFrame(_bal);_bal=requestAnimationFrame(balanceSegs)}
+new MutationObserver(balanceSoon).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']});
+addEventListener('resize',balanceSoon);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(balanceSoon);
 
 /* ================= boot ================= */
 goTab('today');

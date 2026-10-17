@@ -4,9 +4,25 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Guitar Coach">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#e8eaec">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+html{-webkit-text-size-adjust:100%}
+body{overscroll-behavior-y:none}
+@media (display-mode: standalone){header.top{padding-top:env(safe-area-inset-top,0px);top:0!important}}
+#splash{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#3a2416,#140d09 60%,#0b0807);transition:opacity .5s ease}
+#splash.go{opacity:0;pointer-events:none}
+#splash div{display:flex;flex-direction:column;align-items:center;gap:14px}
+#splash img{width:112px;height:112px;border-radius:26px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+#splash b{font:800 30px/1 'Big Shoulders Display','Arial Narrow',Impact,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#f3ede2}
+#splash span{font:500 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:#e49a42}
+</style>
 </head><body>
+<div id="splash" aria-hidden="true"><div><img src="icon-512.png" alt=""><b>Guitar Coach</b><span>Mic edition</span></div></div>
+<script>(function(){var s=document.getElementById('splash');var hide=function(){s.classList.add('go');setTimeout(function(){s.remove()},600)};if(!navigator.standalone&&!matchMedia('(display-mode: standalone)').matches){s.remove();return}window.addEventListener('load',function(){setTimeout(hide,700)});setTimeout(hide,2500)})();</script>
 <title>Scott's Guitar Coach</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2548,7 +2564,7 @@ function parseMerge(raw){let t=String(raw||'').trim();
   const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw new Error('none');const o=JSON.parse(t.slice(a,b+1));if(!o.days)throw new Error('not coach');return o}
 function renderSyncCard(){const w=$('#ps-where');if(!w)return;
   w.innerHTML=inClaude()?`This is your <b>main Coach</b>, synced to your account. The microphone can’t work inside Claude, so mic practice happens in the mic edition.${MIC_URL?` <a href="${MIC_URL}" target="_blank" rel="noopener">Open the mic edition</a>.`:''} After a mic session there, tap Copy my progress, come back here and tap Merge.`
-    :`This is the <b>mic edition</b>. Progress here is saved on this phone only. After practising, tap Copy my progress, open your main Coach in Claude, and tap Merge from the other copy. Merging twice is safe: nothing is counted twice.`}
+    :`${navigator.standalone?'':`<b>Install it:</b> tap Safari’s Share button, then <b>Add to Home Screen</b>. Then always open it from the icon. The home-screen app keeps its own storage, separate from Safari, so merge your progress once more after installing.<br><br>`}This is the <b>mic edition</b>. Progress here is saved on this phone only. After practising, tap Copy my progress, open your main Coach in Claude, and tap Merge from the other copy. Merging twice is safe: nothing is counted twice.`}
 $('#p-sync').addEventListener('click',e=>{const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act,out=$('#ps-out');
   if(act==='mcopy'){const txt='COACH-MERGE:'+JSON.stringify(data);const done=ok=>{out.innerHTML=`<p class="small ${ok?'':'muted'}">${ok?'Copied. Now open the other copy, go to Progress and tap Merge from the other copy.':'Couldn’t copy automatically. Select all the text below and copy it.'}</p>${ok?'':`<textarea rows="4" readonly style="font:500 11px var(--fm)">${esc(txt)}</textarea>`}`};
     if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(()=>done(true),()=>done(false));else done(false)}

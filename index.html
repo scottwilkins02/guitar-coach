@@ -56,7 +56,7 @@ header.top .in{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;alig
 .brand{display:flex;align-items:baseline;gap:10px;min-width:0}
 .brand b{font:800 26px/1 var(--fd);letter-spacing:.03em;text-transform:uppercase}
 .brand span{font:500 11px/1 var(--fm);color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
-.sync{font:500 11px/1.2 var(--fm);color:var(--muted);display:flex;align-items:center;gap:6px;text-align:right}
+.sync{cursor:pointer;font:500 11px/1.2 var(--fm);color:var(--muted);display:flex;align-items:center;gap:6px;text-align:right}
 .sync i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--muted)}
 .sync.ok i{background:var(--ok)} .sync.busy i{background:var(--accent)}
 .wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:14px 120px}
@@ -841,8 +841,8 @@ const Store={ref:null,mode:'local',saving:false,again:false,t:0,
 function setSync(state){const el=$('#sync');
   if(state==='busy'){el.className='sync busy';el.lastChild.textContent='Saving';return}
   if(Store.mode==='account'){el.className='sync ok';el.lastChild.textContent='Synced to your account'}
-  else if(typeof SY!=='undefined'&&SY.cfg&&SY.cfg.gist){el.className=SY.err?'sync':'sync ok';el.lastChild.textContent=SY.err?'Sync paused':'Mic edition · synced via GitHub'}
-  else{el.className='sync';el.lastChild.textContent=window.claude?'Saved on this device':'Mic edition · saved on this phone'}}
+  else if(typeof SY!=='undefined'&&SY.cfg&&SY.cfg.gist){el.className=SY.err?'sync':'sync ok';el.lastChild.textContent=SY.err?'Sync paused · tap to fix':'Synced via GitHub'}
+  else{el.className='sync';el.lastChild.textContent=window.claude?'Saved on this device':'Not synced · tap to set up'}}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>t.hidden=true,2200)}
 
 /* ================= helpers on data ================= */
@@ -2970,6 +2970,8 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-sy]'
   if(k==='off'){SY.cfg=null;sySave();SY.err='';SY.last=null;setSync();renderGhSync();toast('This device is disconnected from sync')}});
 document.addEventListener('visibilitychange',()=>{if(!SY.cfg)return;if(document.visibilityState==='visible')syncNow();else if(SY.t){clearTimeout(SY.t);syncNow()}});
 
+
+$('#sync').addEventListener('click',()=>{if(inClaude())return;goTab('prog');setTimeout(()=>{const c=$('#p-ghsync');if(c)c.scrollIntoView({behavior:'smooth',block:'start'})},80)});
 /* ================= layout: balance segmented controls into even rows ================= */
 const _mc=document.createElement('canvas').getContext('2d');
 function balanceSegs(){document.querySelectorAll('.seg').forEach(seg=>{const bs=[...seg.children].filter(b=>b.tagName==='BUTTON'),n=bs.length;if(!n)return;const W=seg.clientWidth;if(!W)return;

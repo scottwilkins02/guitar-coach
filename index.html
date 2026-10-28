@@ -336,6 +336,17 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 .tag{display:inline-block;font:700 10px var(--fm);letter-spacing:.1em;background:var(--accent-soft);color:var(--accent-ink);border-radius:4px;padding:2px 6px;text-transform:uppercase}
 .jtoday{appearance:none;text-align:left;font:inherit;color:inherit;background:radial-gradient(circle at 20% 0%,#3a2416,#140d09 75%);border:0;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:3px;cursor:pointer}
 .jtoday .eyebrow{color:#e49a42}.jtoday b{font:800 24px/1 var(--fd);text-transform:uppercase;color:#f3ede2;letter-spacing:.03em}.jtoday .small{color:#d9cfc0!important}.jtoday .bar{background:rgba(243,237,226,.18);margin-top:6px}
+/* improvising lessons */
+.imrule{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:10px 12px;display:flex;flex-direction:column;gap:4px}.imrule b{font-size:16px}
+.imcue{border-radius:12px;background:radial-gradient(circle at 20% 0%,#3a2416,#140d09 75%);color:#f3ede2;padding:16px;display:flex;flex-direction:column;gap:4px;min-height:96px;justify-content:center;transition:background .2s}
+.imcue b{font:800 32px/1.05 var(--fd);text-transform:uppercase;letter-spacing:.03em}.imcue span{color:#d9cfc0;font-size:14px}
+.imcue.rest{background:#262b30}.imcue.rest b{color:#9fb3c8}.imcue.idle b{font-size:22px;color:#c8b78f}
+.imchk{appearance:none;text-align:left;font:inherit;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 12px 10px 40px;position:relative;cursor:pointer;color:inherit}
+.imchk:before{content:"";position:absolute;left:12px;top:50%;width:18px;height:18px;margin-top:-9px;border-radius:5px;border:2px solid var(--line)}
+.imchk[aria-pressed="true"]{border-color:var(--ok)}.imchk[aria-pressed="true"]:before{background:var(--ok);border-color:var(--ok)}
+.imchk[aria-pressed="true"]:after{content:"✓";position:absolute;left:15px;top:50%;margin-top:-10px;color:#fff;font-weight:800;font-size:13px}
+.imstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.imstats span{border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--muted)}.imstats b{display:block;font:800 24px/1 var(--fd);color:var(--ink)}
+.lg{padding:0 6px;border-radius:4px}.lg.r{background:#d2462a;color:#fff}.lg.c{background:#f3ede2;color:#1a1410;border:1px solid #c8b78f}.lg.b{border:2px solid #4aa8ff}
 [hidden]{display:none!important}
 </style>
 
@@ -395,10 +406,13 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
   <div class="viewhead"><h2 id="l-title">Scales & jam</h2>
     <div class="seg" id="l-mode"><button data-lm="scales">Scales</button><button data-lm="tech">Technique</button><button data-lm="whole">Whole neck</button><button data-lm="ear">Ear</button></div></div>
   <div id="l-scales" class="stack">
+  <div class="seg" data-sv id="s-view"><button data-v="learn">Learn to improvise</button><button data-v="free">Free jam</button></div>
+  <div id="s-learn" class="stack"></div>
   <div class="card" id="s-ctl"></div>
   <div id="s-neck"></div>
   <div class="legend"><span><i style="background:#d2462a"></i>Root</span><span><i style="background:#f3ede2"></i>Scale note</span><span><i style="background:#f3ede2;border:3px solid #4aa8ff"></i>Note in the current chord</span></div>
   <div class="card" id="s-jam"></div>
+  <div id="s-lafter" class="stack"></div>
   </div>
   <div id="l-tech" class="stack" hidden>
     <div id="tx-body" class="stack"></div>
@@ -714,7 +728,7 @@ class Neck{
   flash(s,f,cls,label,ms=600){let x=this.el(s,f),tmp=false;
     if(!x){this.g.insertAdjacentHTML('beforeend',`<g class="m" data-k="${s}-${f}" transform="translate(${this.cx(f)},${this.cy(s)})"><g class="b"><circle r="13"/><text dy="4">${esc(label||'')}</text></g></g>`);x=this.el(s,f);tmp=true}
     x.classList.add(cls);setTimeout(()=>{if(tmp)x.remove();else x.classList.remove(cls)},ms)}
-  scrollTo(f){requestAnimationFrame(()=>{const scale=this.svg.clientWidth/this.W;this.wrap.scrollLeft=Math.max(0,this.cx(f)*scale-this.wrap.clientWidth/2)})}
+  scrollTo(f){f=Math.max(0,Math.min(this.frets,Math.round(f)||0));requestAnimationFrame(()=>{const scale=this.svg.clientWidth/this.W;this.wrap.scrollLeft=Math.max(0,this.cx(f)*scale-this.wrap.clientWidth/2)})}
 }
 
 /* ================= curriculum ================= */
@@ -739,7 +753,7 @@ const LEVELS=[
   {id:'warm',name:'A-shape barres',min:5,how:'Bm to C#m (A-shape at frets 2 and 4). Mute the low E string with the tip of your index finger.',tool:{tab:'chords',drill:'BmCsm'},tl:'Bm ↔ C#m drill'},
   {id:'box',name:'Boxes 1 and 2',min:7,how:'A minor pentatonic box 1, then box 2, up and down with the click from 60 bpm. Say “root” each time you pass a red dot. Log your clean tempo.',tool:{tab:'scales',root:9,type:'minpent',box:0},tl:'Open A minor'},
   {id:'tech',name:'Hammer-ons, pull-offs, slides',min:6,how:'Alternate days between the two technique lessons. Log your clean tempo when you get through without a mistake.',tool:{tab:'scales',lmode:'tech',tech:'hp'},tl:'Open technique'},
-  {id:'jam',name:'Loop jam',min:7,how:'Improvise over Am, F, C, G. Short phrases with gaps. Put one hammer-on or slide in each phrase and end on a red root dot.',tool:{tab:'scales',root:9,type:'minpent',box:0,prog:0},tl:'Open jam'},
+  {id:'jam',name:'Improvising lesson',min:7,how:'The next lesson in Lead, Learn to improvise: one rule at a time over an Am F C G loop. Once all nine are done, use Free jam: short phrases with gaps, ending on the root.',tool:{tab:'scales',imp:true},tl:'Open lessons'},
   {id:'keys',name:'Ears and keys',min:5,how:'Rotate each day: a Major or minor round (Lead tab, Ear), a Keys round in the Songs tab, or a Name it round on the Neck tab.',tool:{tab:'scales',lmode:'ear'},tl:'Open ear training'}],
  crit:[
   {id:'e2',type:'quiz',mode:'ear-mm',set:'major/minor',ok:9,n:10,ms:60000,text:'Major or minor: 9/10 or better'},
@@ -880,7 +894,7 @@ function applyTool(o){
   if(o.tab==='riffs'&&o.riff){R.id=o.riff;R.rec=null}
   if(o.tab==='chords'&&o.drill){D.id=o.drill}
   if(o.tab==='songs'){G.mode=o.mode||'songs';G.id=o.song||null;G.edit=false;KT.q=null;KT.sum=null;LP.id=null;LP.step=0}
-  if(o.tab==='scales'){LM.mode=o.lmode||'scales';if(o.tech)TX.id=o.tech;if(o.wmode)WN.mode=o.wmode;if(o.root!==undefined){S.root=o.root;WN.root=o.root}if(o.type)S.type=o.type;if(o.box!==undefined)S.box=o.box;if(o.prog!==undefined)S.prog=o.prog}
+  if(o.tab==='scales'){LM.mode=o.lmode||'scales';if(o.imp){IM.view='learn';IM.id=null}else if(o.box!==undefined||o.prog!==undefined||o.root!==undefined)IM.view='free';if(o.tech)TX.id=o.tech;if(o.wmode)WN.mode=o.wmode;if(o.root!==undefined){S.root=o.root;WN.root=o.root}if(o.type)S.type=o.type;if(o.box!==undefined)S.box=o.box;if(o.prog!==undefined)S.prog=o.prog}
 }
 $$('nav.tabs button').forEach(b=>b.addEventListener('click',()=>goTab(b.dataset.tab)));
 function renderAll(){goTab(TAB)}
@@ -1924,7 +1938,7 @@ function renderLead(){
   $$('#l-mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lm===LM.mode));
   $('#l-scales').hidden=LM.mode!=='scales';$('#l-tech').hidden=LM.mode!=='tech';$('#l-whole').hidden=LM.mode!=='whole';$('#l-ear').hidden=LM.mode!=='ear';
   $('#l-title').textContent={scales:'Scales & jam',tech:'Technique',whole:'Whole neck',ear:'Ear training'}[LM.mode];
-  if(LM.mode==='scales')renderScales();else if(LM.mode==='tech')renderTech();else if(LM.mode==='ear')renderEar();else renderWhole()}
+  if(LM.mode==='scales'){const lv=IM.view==='learn';$$('#s-view button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===IM.view));$('#s-learn').hidden=!lv;$('#s-lafter').hidden=!lv;$('#s-ctl').hidden=lv;$('#s-jam').hidden=lv;$('#l-title').textContent=lv?'Improvise':'Scales & jam';if(lv)renderLearn();else renderScales()}else if(LM.mode==='tech')renderTech();else if(LM.mode==='ear')renderEar();else renderWhole()}
 $('#l-mode').addEventListener('click',e=>{const b=e.target.closest('[data-lm]');if(!b)return;if(Player.on)Player.stop();LM.mode=b.dataset.lm;renderLead()});
 function playEx(ex,o){const seq=riffSeq(ex),ev=ex.ev;
   Player.start(seq,{bpm:o.bpm,loop:true,click:o.click!==false,owner:o.owner,trainer:o.trainer?{to:ex.to||o.bpm+40,step:5}:null,
@@ -2646,6 +2660,120 @@ $('#v-journey').addEventListener('click',e=>{const dn=e.target.closest('[data-jn
   const un=e.target.closest('[data-jun]');if(un){const m=Object.assign({},data.jmanual||{});delete m[un.dataset.jun];data.jmanual=m;const d=Object.assign({},data.jstages||{});delete d[un.dataset.jun];data.jstages=d;Store.save();renderJourney();return}
   const sm=e.target.closest('summary');if(sm){const dt=sm.parentElement;setTimeout(()=>{JX.open=dt.open?dt.dataset.jt:(JX.open===dt.dataset.jt?null:JX.open)},0)}});
 
+/* ================= LEARN TO IMPROVISE: guided lessons on the Scales tab ================= */
+const IM={view:'learn',id:null,bpm:70,listen:false,loops:0,song:null,checks:{},st:null};
+const AMIN=[[0,'m'],[8,''],[3,''],[10,'']];
+const IMPRO=[
+ {id:'i1',title:'Find home',goal:'Hear and find the root, the note every phrase wants to come back to.',rule:'Play only the red root notes. One note on the first beat of every bar, then let it ring.',
+  why:'Every scale has a home note. Before playing anything clever, your ear needs to know where home is. In A minor pentatonic box 1, the root A sits on the low E string (fret 5), the D string (fret 7) and the high e string (fret 5).',
+  show:'roots',ex:[[0,5,2],[2,7,2],[5,5,2],[2,7,2]],cue:b=>({t:'Root on beat 1',s:'Low E 5, D 7 or high e 5. Let it ring.'}),
+  checks:['I played the root on every bar for 4 loops','I found the root on all three strings']},
+ {id:'i2',title:'One note, many rhythms',goal:'Make music with rhythm alone, before worrying about which notes.',rule:'Use one note only: A on the D string, fret 7. Play a different rhythm in every bar.',
+  why:'Most of what makes a solo sound good is rhythm and space, not note choice. JustinGuitar uses this exact limit: if one note can sound musical, more notes will too.',
+  show:'one',ex:[[2,7,.5],[2,7,.5],[2,7,1],[2,7,.25],[2,7,.75],[2,7,2]],cue:b=>({t:['Long notes','Short, choppy notes','Off the beat','Your own rhythm'][b%4],s:'Same note: D string, fret 7'}),
+  checks:['I kept to one note for 4 loops','Every bar had a different rhythm']},
+ {id:'i3',title:'Two strings, three notes',goal:'Make short melodic phrases from a tiny set of notes.',rule:'Only the G and B strings of box 1. Short phrases of 3 or 4 notes.',
+  why:'Fewer notes means you listen more. These two strings hold the sweet spot of the box: D, E, G and A, which work over every chord in the loop.',
+  show:'gb',ex:[[3,7,.5],[4,5,.5],[4,8,1],[4,5,.5],[3,7,.5],[3,5,1]],cue:b=>({t:b%2?'Breathe':'Short phrase',s:'G and B strings only'}),
+  checks:['I only used the G and B strings','I left gaps between phrases']},
+ {id:'i4',title:'Question and answer',goal:'Leave space, so your playing sounds like a conversation.',rule:'Play for 2 bars, then rest for 2 bars. Follow the Play and Rest cues.',
+  why:'Beginners fill every beat. Good players leave gaps, which gives the listener time to hear the phrase and makes the next one land harder. The second phrase can answer the first.',
+  show:'box',ex:[[4,8,.5],[4,5,.5],[3,7,1],[3,5,2],[3,5,4]],cue:b=>({t:(b%4)<2?'Play':'Rest',s:(b%4)<2?(b%4===0?'Ask a question':'Finish the question'):'Listen to the band',rest:(b%4)>=2}),
+  checks:['I stopped playing on every Rest cue','My second phrases sounded like answers']},
+ {id:'i5',title:'Land on home',goal:'Make phrases sound finished.',rule:'Every phrase ends on a red root, held until it rings out.',
+  why:'Ending on the root sounds resolved, like a full stop. Ending elsewhere sounds like a question. Once you can choose which, you control how your solo feels.',
+  show:'box',listenTarget:'root',ex:[[4,8,.5],[4,5,.5],[3,7,.5],[3,5,.5],[2,7,2]],cue:b=>({t:(b%4)<2?'Play':'Land on red',s:(b%4)<2?'Phrase…':'Hold the root',rest:false}),
+  checks:['Most phrases ended on a red dot','I held the last note and let it ring']},
+ {id:'i6',title:'Chase the chord',goal:'Make your solo follow the song, not just the key.',rule:'When the chord changes, land on a blue-ringed note: a note of the new chord.',
+  why:'The blue rings show which scale notes belong to the chord being played right now. Landing on one as the chord changes is what makes a solo sound as if it was written for the song.',
+  show:'box',rings:true,listenTarget:'chord',ex:[[3,5,.5],[3,7,.5],[4,5,1],[4,8,.5],[4,5,.5],[3,7,1]],cue:(b,c,n)=>({t:'Now: '+c.label+' · aim for '+tonesIn(c).join(' or '),s:'Next: '+n.label+' · '+tonesIn(n).join(' or ')}),
+  checks:['I landed on a ringed note on most chord changes','I could hear the difference when I did']},
+ {id:'i7',title:'Add colour',goal:'Make phrases sound like guitar, not a keyboard.',rule:'Put one slide, hammer-on, pull-off or bend in every phrase.',
+  why:'These techniques are the guitar’s voice. One per phrase is enough: too many sounds busy. Use the bend meter on the Technique tab to check your bends reach pitch.',
+  show:'box',ex:[[3,5,.5],[3,7,.5,'h'],[4,5,.5],[4,8,1,'b2r'],[3,7,.5],[2,7,1.5,'~']],cue:b=>({t:['Slide','Hammer-on','Bend','Your choice'][b%4],s:'One per phrase'}),
+  checks:['Every phrase had a slide, hammer-on, pull-off or bend','My bends reached the right pitch']},
+ {id:'i8',title:'Move up to box 2',goal:'Break out of one position.',rule:'Start in box 1, slide up into box 2 on the G string (fret 7 to 9), then come back.',
+  why:'Box 2 sits just above box 1 and shares notes with it. Sliding between them on one string is the easiest way to start using more of the neck without getting lost.',
+  show:'two',ex:[[3,7,.5],[3,9,1,'/'],[4,8,.5],[4,10,.5],[3,9,.5],[3,7,.5,'/'],[2,7,1.5]],cue:b=>({t:(b%4)<2?'Box 1':'Box 2',s:(b%4)===1?'Slide up on the G string':(b%4)===3?'Slide back down':''}),
+  checks:['I moved between box 1 and box 2 without stopping','I used a slide to change boxes']},
+ {id:'i9',title:'Solo over your song',goal:'Put it all together over one of your set songs.',rule:'Pick a song. Use its lead scale, leave space, land on chord tones and end on the root.',
+  why:'This is the real thing: everything from lessons 1 to 8, in the key of a song you play with the band.',
+  show:'song',rings:true,listenTarget:'chord',ex:null,cue:(b,c,n)=>({t:'Now: '+c.label+' · aim for '+tonesIn(c).join(' or '),s:'Next: '+n.label}),
+  checks:['I played a full loop of solo over the song','I used space and ended phrases on the root']}];
+function tonesIn(c){const sc=SCALES[S.type],pcs=sc.iv.map(i=>mod(S.root+i)),fl=useFlats(S.root,sc.minor);const t=QUAL[c.q].map(i=>mod(c.root+i)).filter(p=>pcs.includes(p));return (t.length?t:QUAL[c.q].map(i=>mod(c.root+i))).map(p=>spell(p,fl))}
+function imSongs(){return SONGS.filter(s=>s.lead&&songLoop(s).length)}
+function imSetup(L){if(L.show==='song'){const s=SONGS.find(x=>x.id===IM.song)||imSongs()[0];IM.song=s.id;S.root=s.lead.root;S.type=s.lead.type}else{S.root=9;S.type='minpent'}S.box=0;S.labels='deg'}
+function imList(L){if(L.show==='song'){const s=SONGS.find(x=>x.id===IM.song);return songLoop(s).map(c=>Object.assign({},c,{beats:c.beats||4}))}
+  return AMIN.map(([iv,q])=>({root:mod(S.root+iv),q,beats:4,label:chordLabel(mod(S.root+iv),q)}))}
+function imMarks(L,chord){imSetup(L);let m=scaleMarks(chord&&L.rings?QUAL[chord.q].map(i=>mod(chord.root+i)):null);
+  if(L.show==='roots')m=m.filter(x=>x.cls.includes('root'));
+  if(L.show==='one')m=[{s:2,f:7,cls:'root',label:'A'}];
+  if(L.show==='gb')m=m.filter(x=>x.s===3||x.s===4);
+  if(L.show==='two'){S.box=1;const b2=scaleMarks(null).map(x=>Object.assign(x,{cls:x.cls+' dim'}));S.box=0;const k=new Set(m.map(x=>x.s+'-'+x.f));m=m.concat(b2.filter(x=>!k.has(x.s+'-'+x.f)))}
+  return m}
+function imDone(id){return (data.impro||{})[id]}
+function renderLearn(){const top=$('#s-learn'),aft=$('#s-lafter');if(!neckS)neckS=new Neck($('#s-neck'));
+  if(!IM.id){const L=IMPRO[0];imSetup(IMPRO[3]);neckS.set(scaleMarks(null));neckS.scrollTo(6.5);
+    const nd=IMPRO.findIndex(l=>!imDone(l.id));
+    top.innerHTML=`<div class="card"><p class="eyebrow">Learn to improvise</p><h2 style="font-size:30px">How it works</h2>
+      <p>When the band plays in a key, five notes always sound right over its chords: the <b>minor pentatonic scale</b>. Below is A minor pentatonic in <b>box 1</b>, frets 5 to 8: the shape your hand already knows.</p>
+      <ul class="tips"><li><b class="lg r">Red</b> is the <b>root</b>, the home note. Ending on it sounds finished.</li>
+      <li><b class="lg c">Cream</b> dots are the other scale notes. All five sound fine over the backing loop.</li>
+      <li><b class="lg b">Blue rings</b> appear while the loop plays: notes of the chord happening right now. Landing on them makes you sound in step with the song.</li>
+      <li>The labels name each note by its distance from the root: <b>R</b> root, <b>b3</b> minor third (the sad, bluesy note), <b>4</b> fourth, <b>5</b> fifth (strong, safe), <b>b7</b> flat seventh.</li></ul>
+      <p class="small muted">Nine short lessons, about 10 minutes each. Each one gives you a single rule to follow over the loop. Rules like these are how teachers get you improvising fast: limits make it easier, not harder.</p></div>`;
+    aft.innerHTML=`<div class="stack" style="gap:8px">${IMPRO.map((l,i)=>`<button class="song lesson" data-imo="${l.id}"><span class="n ${imDone(l.id)?'done':''}">${imDone(l.id)?'✓':i+1}</span><span><b style="font-size:20px">${esc(l.title)}</b>${i===nd?' <span class="tag">Next</span>':''}<br><span class="small">${esc(l.rule)}</span></span></button>`).join('')}</div>`;return}
+  const L=IMPRO.find(x=>x.id===IM.id),i=IMPRO.indexOf(L),playing=Player.on&&Player.owner==='imjam',done=imDone(L.id);imSetup(L);
+  const songSel=L.show==='song'?`<div class="ctl"><label class="lab" for="im-song">Song</label><select id="im-song">${imSongs().map(s=>`<option value="${s.id}" ${s.id===IM.song?'selected':''}>${esc(s.title)} · ${esc(s.keyLabel)}</option>`).join('')}</select><span class="small muted">Lead scale: ${spell(S.root,useFlats(S.root,SCALES[S.type].minor))} ${SCALES[S.type].name.toLowerCase()}, box 1</span></div>`:'';
+  top.innerHTML=`<button class="btn small ghost" data-imact="back" style="align-self:start">← All lessons</button>
+   <div class="card"><p class="eyebrow">Lesson ${i+1} of ${IMPRO.length}</p><h2 style="font-size:30px">${esc(L.title)}</h2><p>${esc(L.goal)}</p>
+    <div class="imrule"><span class="eyebrow">The rule</span><b>${esc(L.rule)}</b></div><p class="small muted">${esc(L.why)}</p>${songSel}</div>
+   <div class="card"><h3 class="sec" style="margin:0">1 · Hear it</h3>${L.ex?`<p class="small">The app plays an example that follows the rule. Watch the neck.</p><button class="btn" data-imact="ex" id="im-ex" style="align-self:start">${Player.on&&Player.owner==='imex'?'Stop':'Play the example'}</button>`:'<p class="small">No example for this one: it’s your solo.</p>'}</div>`;
+  neckS.set(imMarks(L,null));neckS.scrollTo(L.show==='two'?8:L.show==='one'?7:6.5);
+  const st=IM.st;const mic=!inClaude();
+  aft.innerHTML=`<div class="card"><h3 class="sec" style="margin:0">2 · Your turn</h3><p class="small">Play along on your guitar while the loop runs. Follow the cue. Aim for at least 4 loops.</p>
+    <div class="imcue ${playing?'':'idle'}" id="im-cue"><b id="im-cuet">${playing?'…':'Press Play loop'}</b><span id="im-cues">${playing?'':'The loop counts you in, then the cues start.'}</span></div>
+    <div class="row"><button class="btn pri" data-imact="loop" id="im-play">${playing?'Stop':'Play loop'}</button><div class="beats" id="im-beats"><i></i><i></i><i></i><i></i></div><span class="timer" id="im-bpmout">${IM.bpm} bpm</span><span class="small muted" id="im-loops">${IM.loops?IM.loops+' loop'+(IM.loops===1?'':'s'):''}</span></div>
+    <div class="ctl"><label class="lab" for="im-bpm">Tempo</label><input type="range" id="im-bpm" min="50" max="120" value="${IM.bpm}"></div>
+    ${mic?`<div class="row"><button class="chip" data-imact="listen" aria-pressed="${IM.listen}">Listen while I play (mic)</button></div><div id="im-stats" class="small">${imStatsHTML()}</div>`:`<p class="small muted">In the mic edition, the app can listen and tell you how many notes were in the scale, how many phrases ended on the root and how many chord changes you landed.</p>`}</div>
+   <div class="card"><h3 class="sec" style="margin:0">3 · Check</h3><p class="small">Tick what you managed. When everything is ticked, the lesson counts as done.</p>
+    <div class="stack" style="gap:6px">${L.checks.map((c,k)=>`<button class="imchk" data-imchk="${k}" aria-pressed="${!!(IM.checks[L.id]||{})[k]||!!done}">${esc(c)}</button>`).join('')}</div>
+    ${done?`<p class="fb ok">Done ${fmtDate(done)}.</p>${i<IMPRO.length-1?`<button class="btn pri" data-imo="${IMPRO[i+1].id}" style="align-self:start">Next lesson: ${esc(IMPRO[i+1].title)}</button>`:''}<button class="btn small ghost" data-imact="undo" style="align-self:start">Mark as not done</button>`
+      :`<button class="btn pri" data-imact="done" style="align-self:start" ${L.checks.every((c,k)=>(IM.checks[L.id]||{})[k])?'':'disabled'}>Lesson done</button>`}</div>`}
+function imStatsHTML(){const s=IM.st;if(!s||!s.notes)return IM.listen?'<span class="muted">Listening. Play, and your numbers appear here.</span>':'';
+  return `<div class="imstats"><span><b>${Math.round(s.inScale/s.notes*100)}%</b>notes in the scale</span><span><b>${s.phrases?s.rootEnds+'/'+s.phrases:'–'}</b>phrases ended on the root</span><span><b>${s.changes?s.lands+'/'+s.changes:'–'}</b>chord changes landed</span></div>`}
+function imStatsRefresh(){const e=$('#im-stats');if(e)e.innerHTML=imStatsHTML()}
+let IMLIST=null,IMCH=null;
+function imLoop(){const L=IMPRO.find(x=>x.id===IM.id);if(Player.on&&Player.owner==='imjam'){Player.stop();return}
+  imSetup(L);const list=imList(L);IMLIST=list;IM.loops=0;IMCH=null;let firstBar=true;
+  startLoop(list,{bpm:IM.bpm,owner:'imjam',chordEl:'#im-dummy',nextEl:'#im-dummy',beatsSel:'#im-beats',
+    onChord:ci=>{const c=list[ci],n=list[(ci+1)%list.length];IMCH={c,t:AC.currentTime,landed:null};if(ci===0&&!firstBar){IM.loops++;const l=$('#im-loops');if(l)l.textContent=IM.loops+' loop'+(IM.loops===1?'':'s')}firstBar=false;
+      if(L.rings)neckS.set(imMarks(L,c));const bar=ci+IM.loops*list.length;const q=L.cue(bar,c,n);
+      const box=$('#im-cue');if(box){box.classList.toggle('rest',!!q.rest);box.classList.remove('idle')}const t=$('#im-cuet'),s=$('#im-cues');if(t)t.textContent=q.t;if(s)s.textContent=q.s||''},
+    onStop:()=>{const p=$('#im-play');if(p)p.textContent='Play loop';const t=$('#im-cuet');if(t)t.textContent='Press Play loop';const box=$('#im-cue');if(box)box.classList.add('idle');IMCH=null}});
+  const p=$('#im-play');if(p)p.textContent='Stop';const t=$('#im-cuet'),sb=$('#im-cues'),bx=$('#im-cue');if(t)t.textContent='Count-in';if(sb)sb.textContent='Four clicks, then the loop starts';if(bx)bx.classList.remove('idle');if(IM.listen)imListen(true)}
+/* mic feedback: notes in scale, phrase endings on the root, landings on chord tones */
+let IMN=null;
+async function imListen(on){if(!on){IM.listen=false;if(MIC.on)micStop();return}
+  if(!await micStart()){IM.listen=false;toast(micErrText());renderLearn();return}IM.listen=true;IM.st=IM.st||{notes:0,inScale:0,phrases:0,rootEnds:0,changes:0,lands:0};
+  const pcs=()=>SCALES[S.type].iv.map(i=>mod(S.root+i));
+  MIC.noteSubs.add(n=>{const s=IM.st;if(!n.onset&&IMN&&n.pc===IMN.pc)return;s.notes++;if(pcs().includes(n.pc))s.inScale++;IMN={pc:n.pc,t:n.t,ended:false};
+    if(IMCH&&IMCH.landed===null&&n.t-IMCH.t<=60/IM.bpm*1.2&&n.t>=IMCH.t-.15){IMCH.landed=QUAL[IMCH.c.q].map(i=>mod(IMCH.c.root+i)).includes(n.pc);s.changes++;if(IMCH.landed)s.lands++}imStatsRefresh()});
+  MIC.frameSubs.add(fr=>{if(IMN&&!IMN.ended&&fr.rms<0.01&&fr.t-IMN.t>0.7){IMN.ended=true;IM.st.phrases++;if(IMN.pc===S.root)IM.st.rootEnds++;imStatsRefresh()}});imStatsRefresh()}
+document.addEventListener('click',e=>{if(TAB!=='scales')return;
+  const sv=e.target.closest('[data-sv] button');if(sv){if(Player.on)Player.stop();listenStopAll();IM.view=sv.dataset.v;renderLead();return}
+  const o=e.target.closest('[data-imo]');if(o){if(Player.on)Player.stop();listenStopAll();IM.id=o.dataset.imo;IM.st=null;IM.loops=0;renderLearn();window.scrollTo(0,0);return}
+  const c=e.target.closest('[data-imchk]');if(c&&IM.id){if(imDone(IM.id))return;const k=+c.dataset.imchk;const m=IM.checks[IM.id]=IM.checks[IM.id]||{};m[k]=!m[k];renderLearn();return}
+  const a=e.target.closest('[data-imact]');if(!a)return;const k=a.dataset.imact;const L=IMPRO.find(x=>x.id===IM.id);
+  if(k==='back'){if(Player.on)Player.stop();listenStopAll();IM.id=null;renderLearn();window.scrollTo(0,0)}
+  if(k==='ex'){if(Player.on&&Player.owner==='imex'){Player.stop();return}imSetup(L);playEx({ev:L.ex},{bpm:Math.min(IM.bpm,80),owner:'imex',neck:neckS,beats:'#im-beats',out:'#im-dummy',slider:'#im-dummy',btn:'#im-ex',label:'Play the example',click:true});Player.loop=false;a.textContent='Stop'}
+  if(k==='loop')imLoop();
+  if(k==='listen'){imListen(!IM.listen).then(()=>{const b=$('[data-imact="listen"]');if(b)b.setAttribute('aria-pressed',IM.listen);imStatsRefresh()})}
+  if(k==='done'){data.impro=Object.assign({},data.impro||{},{[IM.id]:today()});Store.save();if(Player.on)Player.stop();pushWin('Improvising lesson done: '+L.title);renderLearn()}
+  if(k==='undo'){const m=Object.assign({},data.impro||{});delete m[IM.id];data.impro=m;IM.checks[IM.id]={};Store.save();renderLearn()}});
+document.addEventListener('change',e=>{if(e.target.id==='im-song'){if(Player.on)Player.stop();IM.song=e.target.value;renderLearn()}});
+document.addEventListener('input',e=>{if(e.target.id==='im-bpm'){IM.bpm=+e.target.value;const o=$('#im-bpmout');if(o)o.textContent=IM.bpm+' bpm';if(Player.on&&Player.owner==='imjam')Player.setBpm(IM.bpm)}});
+
 /* ================= REWARDS: celebrations, badges, competence score ================= */
 const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})();
 const CEL={q:[],on:false,t:0,raf:0};
@@ -2701,6 +2829,7 @@ const BFAM=[
  {id:'pb',name:'Beat yourself',icon:'↑',unit:'tempo personal bests',v:tempoPBCount,t:[1,5,15,40]},
  {id:'speed',name:'Up to speed',icon:'♪',unit:'riffs at full target tempo',v:riffsAtSpeed,t:[1,3,5]},
  {id:'triads',name:'Triad finder',icon:'△',unit:'out of 10, Name the triad',v:()=>bestOk('triad',10),t:[6,8,10]},
+ {id:'improv',name:'Improviser',icon:'♫',unit:'improvising lessons done',v:()=>Object.keys(data.impro||{}).length,t:[1,4,9]},
  {id:'ears',name:'Good ears',icon:'E',unit:'out of 10, Major or minor',v:()=>bestOk('ear-mm',10),t:[7,9,10]},
  {id:'ints',name:'Interval hunter',icon:'I',unit:'out of 10, Intervals',v:()=>bestOk('ear-int',10),t:[6,8,10]},
  {id:'echo',name:'Echo',icon:'R',unit:'notes in Call and response',v:callLevel,t:[3,4,5,6]},
@@ -2831,7 +2960,7 @@ function mergeData(o){if(!o||typeof o!=='object')throw new Error('bad');let adde
     if(e.note&&e.note!==m.note&&!(m.note||'').includes(e.note)){m.note=m.note?m.note+' / '+e.note:e.note;added++}});
   const obj=(k,pick)=>{const a=Object.assign({},data[k]||{});Object.entries(o[k]||{}).forEach(([kk,v])=>{if(!(kk in a)){a[kk]=v;added++}else{const w=pick?pick(a[kk],v):a[kk];if(K(w)!==K(a[kk])){a[kk]=w;added++}}});data[k]=a};
   obj('loopDone',(x,y)=>x<y?x:y);obj('rep',(x,y)=>(y.d||'')>(x.d||'')?y:x);obj('spots',(x,y)=>y.bpm>x.bpm?y:x);obj('self');obj('chal');obj('weekHits');obj('critHits');
-  obj('badges',(x,y)=>x<y?x:y);obj('jstages',(x,y)=>x<y?x:y);obj('jmanual',(x,y)=>x<y?x:y);obj('comp');obj('nstats',(x,y)=>y[0]>x[0]?y:x);obj('songEdits');
+  obj('badges',(x,y)=>x<y?x:y);obj('jstages',(x,y)=>x<y?x:y);obj('impro',(x,y)=>x<y?x:y);obj('jmanual',(x,y)=>x<y?x:y);obj('comp');obj('nstats',(x,y)=>y[0]>x[0]?y:x);obj('songEdits');
   {const ea=data.ear||{},eb=o.ear||{};const seen=new Set((ea.call||[]).map(K));const add=(eb.call||[]).filter(x=>!seen.has(K(x)));
     data.ear=Object.assign({},ea,{call:(ea.call||[]).concat(add).slice(-200),callLevel:Math.max(ea.callLevel||2,eb.callLevel||2)});added+=add.length}
   if((o.level||1)>data.level){data.level=o.level;data.levelStart=o.levelStart;added++}
@@ -2890,6 +3019,7 @@ function buildReport(){
   lines.push('','SONG BOARD');SONGS.forEach(sg=>lines.push(`${sg.title}: ${STAGES[repStage(sg.id)]}`));
   {const c=compNow();lines.push('','COMPETENCE SCORE',`${c.total}/100 (`+AREAS.map(a=>`${a.name} ${c.a[a.id]}`).join(', ')+')');const h=data.comp||{},ks=Object.keys(h).sort();if(ks.length)lines.push('History: '+ks.slice(-14).map(k=>`${k.slice(5)} ${h[k][0]}`).join(', '))}
   {const st=jAll(),n=jCount(st),ci=jChapter(n);lines.push('','JOURNEY',`Chapter ${ci+1} of 7: ${CHAPTERS[ci].name}. ${n} of ${JSTAGES.length} stages. Phase: ${PHASE_NAME[jPhase(st)]}.`);JTRACKS.forEach(t=>lines.push(`${t.name}: `+t.stages.map((s,i)=>`${st[s.id].met?'[x]':'[ ]'} ${i+1}. ${s.name}${!st[s.id].met&&st[s.id].now?' ('+st[s.id].now+')':''}`).join('; ')))}
+  lines.push('','IMPROVISING LESSONS: '+IMPRO.map((l,i)=>`${imDone(l.id)?'[x]':'[ ]'} ${i+1}. ${l.title}`).join('; '));
   lines.push('','BADGES ('+Object.keys(data.badges||{}).length+' of '+badgeTotal()+')');BFAM.forEach(f=>{const k=famEarned(f);if(k>=0)lines.push(`${f.name}: ${TIERS[k].n}`)});
   {const ck=(data.checks||[]).slice(-10).reverse();lines.push('','MIC RIFF CHECKS (newest first)');if(!ck.length)lines.push('None yet.');ck.forEach(c=>lines.push(`${c.d} | ${tempoLabel(c.i)} at ${c.bpm} bpm | ${c.hit}/${c.n} notes | timing ${c.med} ms (+ late), spread ${c.spr} ms`))}
   {const bd=(data.bends||[]).slice(-5).reverse();if(bd.length){lines.push('','BEND METER SETS');bd.forEach(b=>lines.push(`${b.d} | ${BENDS[b.k].t} | ${b.ok}/5 in tune`))}}

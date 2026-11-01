@@ -357,6 +357,8 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 .rsladder button b{font:800 20px/1 var(--fd)}.rsladder button span{font-size:11px;color:var(--muted)}.rsladder button.dn{background:var(--accent-soft);border-color:var(--accent)}
 .rstap{appearance:none;width:100%;min-height:120px;border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font:800 28px var(--fd);text-transform:uppercase;cursor:pointer;touch-action:manipulation}
 .tab.hidetab span{color:transparent}.tab.hidetab{position:relative}.tab.hidetab:after{content:"Tab hidden: play from memory";position:absolute;inset:0;display:grid;place-items:center;font:700 14px var(--fb);color:var(--muted)}
+.vframe{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}.vframe iframe,.vframe #vl-player{position:absolute;inset:0;width:100%;height:100%;border:0}
+.chip.vx{min-width:0;padding:0 10px;margin-left:-6px;color:var(--muted)}
 [hidden]{display:none!important}
 </style>
 
@@ -446,6 +448,7 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
     <div class="seg" id="g-mode"><button data-gm="songs">Songs</button><button data-gm="keys">Keys</button><button data-gm="loop">Loop</button><button data-gm="tone">Tone</button></div>
   </div>
   <div id="g-body" class="stack"></div>
+  <div id="g-video" class="stack"></div>
   <div id="g-neckwrap" hidden><div id="g-neck"></div></div>
   <div id="g-after" class="stack"></div>
 </section>
@@ -873,7 +876,7 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTi
 /* ================= helpers on data ================= */
 function lvl(){return LEVELS[Math.min(data.level,LEVELS.length)-1]}
 function dayEntry(d,create){if(!data.days[d]&&create)data.days[d]={level:data.level,blocks:[],mins:0,note:''};return data.days[d]}
-function practised(d){const e=data.days[d];return !!(e&&(e.blocks.length||e.mins))}
+function practised(d){const e=data.days[d];return !!(e&&(e.blocks.length||e.mins||(e.vmins||0)>=5))}
 function streak(){let n=0;const d=new Date();if(!practised(iso(d)))d.setDate(d.getDate()-1);while(practised(iso(d))){n++;d.setDate(d.getDate()-1)}return n}
 function sessionsAtLevel(){return Object.values(data.days).filter(e=>e.level===data.level&&e.blocks.length).length}
 function daysBetween(a,b){return Math.round((new Date(b+'T12:00')-new Date(a+'T12:00'))/864e5)}
@@ -894,7 +897,7 @@ function fmtDate(s){const d=new Date(s+'T12:00');return d.toLocaleDateString('en
 /* ================= navigation ================= */
 let TAB='today';
 function goTab(tab,opts){
-  if(tab!==TAB)listenStopAll();TAB=tab;$$('.view').forEach(v=>v.hidden=v.id!=='v-'+tab);
+  if(tab!==TAB){listenStopAll();if(TAB==='songs'&&typeof vStop==='function'){vStop();VL.song=null;const gv=$('#g-video');if(gv)gv.innerHTML=''}}TAB=tab;$$('.view').forEach(v=>v.hidden=v.id!=='v-'+tab);
   $$('nav.tabs button').forEach(b=>{if(b.dataset.tab===tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
   if(opts)applyTool(opts);
   ({today:renderToday,journey:renderJourney,neck:renderNeckView,riffs:renderRiffs,scales:renderLead,songs:renderSongs,chords:renderChords,prog:renderProg})[tab]();
@@ -1498,7 +1501,7 @@ function songMarks(s,tones){const sc=SCALES[s.lead.type];const fl=useFlats(s.key
 function lick(root,type){let r=mod(root-4);
   if(type==='majpent'){if(r<1)r+=12;return [[4,r+2,.5],[4,r,.5],[3,r+1,.5],[3,r-1,.5],[2,r+2,2]]}
   return [[4,r+3,.5],[4,r,.5],[3,r+2,.5],[3,r,.5],[2,r+2,2]]}
-function renderSongs(){
+function renderSongs(){setTimeout(()=>renderVideo(G.mode==='songs'&&G.id?SONGS.find(x=>x.id===G.id):null),0);
   $$('#g-mode button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.gm===G.mode));
   if(!neckG)neckG=new Neck($('#g-neck'));
   const body=$('#g-body'),after=$('#g-after'),nw=$('#g-neckwrap');after.innerHTML='';nw.hidden=true;
@@ -2924,6 +2927,53 @@ document.addEventListener('click',e=>{if(TAB!=='riffs')return;
     if(k==='save'&&I.res){const nm=(I.name||'').trim()||'My riff '+((data.custom||[]).length+1);const r={id:'t'+Date.now().toString(36),name:nm.slice(0,60),sub:I.song?'From your tab · '+(SONGS.find(s=>s.id===I.song)||{}).title:'From your tab',src:'tab',bpm:Math.round(I.to*.6),to:I.to,ev:I.res.ev,bars:I.res.bars,song:I.song||undefined};
       data.custom=(data.custom||[]).concat([r]).slice(-60);Store.save();R.imp=null;R.id=r.id;RSV.step='hear';toast('Riff saved. Start with Hear it.');renderRiffs()}}});
 
+/* ================= VIDEO LESSONS: a YouTube lesson per song, with speed, A-B loop and bookmarks ================= */
+const VDEF={jbg:{id:'HCeUBf37Sro',marks:[]}};
+const VL={song:null,player:null,ready:false,api:false,loop:false,a:null,b:null,tick:0,pend:null,watchT:0};
+function ytId(u){const m=String(u||'').match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/|\/live\/)([A-Za-z0-9_-]{11})/);return m?m[1]:(/^[A-Za-z0-9_-]{11}$/.test(String(u||'').trim())?String(u).trim():null)}
+function vGet(sid){return (data.videos||{})[sid]||VDEF[sid]||null}
+function vSet(sid,v){data.videos=Object.assign({},data.videos||{},{[sid]:v});Store.save()}
+function fmtT(t){t=Math.max(0,Math.round(t||0));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')}
+function ytApi(cb){if(window.YT&&YT.Player){cb();return}(window._ytq=window._ytq||[]).push(cb);if(VL.api)return;VL.api=true;
+  const prev=window.onYouTubeIframeAPIReady;window.onYouTubeIframeAPIReady=()=>{if(prev)try{prev()}catch(e){}(window._ytq||[]).splice(0).forEach(f=>f())};
+  const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';s.onerror=()=>{const m=$('#vl-msg');if(m)m.textContent='The video player couldn’t load. Check your connection, or open the video in YouTube.'};document.head.appendChild(s)}
+function renderVideo(s){const el=$('#g-video');if(!el)return;if(!s||G.mode!=='songs'){el.innerHTML='';VL.song=null;vStop();return}
+  if(VL.song===s.id&&el.childElementCount&&!VL.dirty)return;VL.dirty=false;vStop();VL.song=s.id;VL.loop=false;VL.a=VL.b=null;const v=VL.edit===s.id?null:vGet(s.id);
+  if(!v){el.innerHTML=`<div class="card"><h3 class="sec" style="margin:0">Video lesson</h3><p class="small">Found a lesson for this song on YouTube? Paste its link to watch it here slowed down, loop the hard bits and bookmark sections.</p>
+    <input type="text" id="vl-url" placeholder="https://youtube.com/watch?v=…" autocomplete="off" autocapitalize="off" spellcheck="false" style="width:100%;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:10px 12px;font-size:16px">
+    <button class="btn pri" data-vl="save" style="align-self:start">Add video</button><p class="fb bad small" id="vl-err"></p></div>`;return}
+  const url='https://www.youtube.com/watch?v='+v.id;
+  if(inClaude()){el.innerHTML=`<div class="card"><h3 class="sec" style="margin:0">Video lesson</h3><p class="small">Videos can’t play inside Claude. Open it in YouTube, or use the mic edition, which plays it here with slow-down, loop and bookmarks.</p><div class="row btns"><a class="btn pri" href="${url}" target="_blank" rel="noopener">Open in YouTube</a>${MIC_URL?`<a class="btn" href="${MIC_URL}" target="_blank" rel="noopener">Open mic edition</a>`:''}</div>${vMarksHTML(v,true)}</div>`;return}
+  el.innerHTML=`<div class="card"><div class="row" style="justify-content:space-between"><h3 class="sec" style="margin:0">Video lesson</h3><button class="btn small ghost" data-vl="change">Change video</button></div>
+    <div class="vframe"><div id="vl-player"></div></div><p class="small muted" id="vl-msg">Loading the video…</p>
+    <div class="ctl"><span class="lab">Speed</span><div class="seg" data-vlspeed>${[.5,.75,1].map(r=>`<button data-v="${r}" aria-pressed="${r===1}">${r===1?'Full speed':r+'×'}</button>`).join('')}</div></div>
+    <div class="ctl"><span class="lab">Loop a section <span id="vl-ab" class="muted"></span></span><div class="row btns" style="grid-template-columns:repeat(3,minmax(0,1fr))"><button class="btn" data-vl="a">Set start</button><button class="btn" data-vl="b">Set end</button><button class="btn" data-vl="loop" aria-pressed="false">Loop off</button></div></div>
+    <div class="ctl"><span class="lab">Bookmarks</span><div id="vl-marks">${vMarksHTML(v)}</div><div class="row" style="flex-wrap:nowrap"><input type="text" id="vl-mname" placeholder="Name this moment, e.g. Intro bar 1" style="flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;background:var(--bg);padding:8px 10px;font-size:16px"><button class="btn" data-vl="mark">Add</button></div></div>
+    <p class="small muted">Watch a bit slowed down, loop it, then switch to the neck: the Riffs for this song list below has the riff with the looper and band backing. Watching time counts as practice.</p></div>`;
+  ytApi(()=>{if(VL.song!==s.id||!$('#vl-player'))return;VL.ready=false;
+    VL.player=new YT.Player('vl-player',{videoId:v.id,playerVars:{playsinline:1,rel:0,modestbranding:1},events:{
+      onReady:()=>{VL.ready=true;const m=$('#vl-msg');if(m)m.textContent='Tip: set the speed to 0.5× and loop one bar at a time.';if(VL.pend!=null){VL.player.seekTo(VL.pend,true);VL.player.playVideo();VL.pend=null}},
+      onError:()=>{const m=$('#vl-msg');if(m)m.innerHTML=`This video can’t play here (the owner may have turned off embedding). <a href="${url}" target="_blank" rel="noopener">Open it in YouTube</a>.`}}})});
+  clearInterval(VL.tick);VL.tick=setInterval(vTick,250)}
+function vMarksHTML(v,link){const ms=(v.marks||[]).slice().sort((a,b)=>a.t-b.t);if(!ms.length)return '<span class="small muted">None yet.</span>';
+  return `<div class="chips">${ms.map((m,i)=>link?`<a class="chip" href="https://www.youtube.com/watch?v=${v.id}&t=${Math.floor(m.t)}s" target="_blank" rel="noopener">${esc(m.n)} · ${fmtT(m.t)}</a>`:`<button class="chip" data-vlm="${m.t}">${esc(m.n)} · ${fmtT(m.t)}</button><button class="chip vx" data-vldel="${m.t}" aria-label="Delete bookmark">×</button>`).join('')}</div>`}
+function vStop(){clearInterval(VL.tick);try{if(VL.player&&VL.player.destroy)VL.player.destroy()}catch(e){}VL.player=null;VL.ready=false}
+function vTick(){const p=VL.player;if(!p||!VL.ready||!p.getPlayerState)return;let st;try{st=p.getPlayerState()}catch(e){return}
+  if(st===1){const t=p.getCurrentTime();if(VL.loop&&VL.a!=null&&VL.b!=null&&t>=VL.b)p.seekTo(VL.a,true);
+    VL.watchT+=.25;if(VL.watchT>=60){VL.watchT=0;const e=dayEntry(today(),true);e.vmins=(e.vmins||0)+1;Store.save()}}}
+function vAB(){const e=$('#vl-ab');if(e)e.textContent=VL.a!=null||VL.b!=null?`(${VL.a!=null?fmtT(VL.a):'–'} to ${VL.b!=null?fmtT(VL.b):'–'})`:''}
+document.addEventListener('click',e=>{if(TAB!=='songs')return;const sid=VL.song||G.id;
+  const sp=e.target.closest('[data-vlspeed] button');if(sp){if(VL.ready)VL.player.setPlaybackRate(+sp.dataset.v);$$('[data-vlspeed] button').forEach(b=>b.setAttribute('aria-pressed',b===sp));return}
+  const jm=e.target.closest('[data-vlm]');if(jm){if(VL.ready){VL.player.seekTo(+jm.dataset.vlm,true);VL.player.playVideo()}return}
+  const dl=e.target.closest('[data-vldel]');if(dl){const v=Object.assign({},vGet(sid));v.marks=(v.marks||[]).filter(m=>m.t!==+dl.dataset.vldel);vSet(sid,v);$('#vl-marks').innerHTML=vMarksHTML(v);return}
+  const a=e.target.closest('[data-vl]');if(!a)return;const k=a.dataset.vl;
+  if(k==='save'){const id=ytId($('#vl-url').value);if(!id){$('#vl-err').textContent='That doesn’t look like a YouTube link. Copy it from the Share button in YouTube.';return}VL.edit=null;vSet(sid,{id,marks:[]});VL.dirty=true;renderVideo(SONGS.find(x=>x.id===sid))}
+  if(k==='change'){VL.edit=sid;VL.dirty=true;renderVideo(SONGS.find(x=>x.id===sid))}
+  if(!VL.ready)return;const t=VL.player.getCurrentTime();
+  if(k==='a'){VL.a=t;if(VL.b!=null&&VL.b<=t)VL.b=null;vAB()}if(k==='b'){VL.b=t;if(VL.a==null||VL.a>=t)VL.a=Math.max(0,t-5);vAB()}
+  if(k==='loop'){VL.loop=!VL.loop&&VL.a!=null&&VL.b!=null;a.textContent=VL.loop?'Loop on':'Loop off';a.setAttribute('aria-pressed',VL.loop);if(VL.loop){VL.player.seekTo(VL.a,true);VL.player.playVideo()}else if(VL.a==null||VL.b==null)toast('Set a start and an end first')}
+  if(k==='mark'){const n=($('#vl-mname').value||'').trim()||'Bookmark '+fmtT(t);const v=Object.assign({marks:[]},vGet(sid));v.marks=(v.marks||[]).concat([{n:n.slice(0,40),t:Math.round(t*10)/10}]);vSet(sid,v);$('#vl-mname').value='';$('#vl-marks').innerHTML=vMarksHTML(v);toast('Bookmark added')}});
+
 /* ================= REWARDS: celebrations, badges, competence score ================= */
 const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})();
 const CEL={q:[],on:false,t:0,raf:0};
@@ -3111,7 +3161,7 @@ function mergeData(o){if(!o||typeof o!=='object')throw new Error('bad');let adde
     if(e.note&&e.note!==m.note&&!(m.note||'').includes(e.note)){m.note=m.note?m.note+' / '+e.note:e.note;added++}});
   const obj=(k,pick)=>{const a=Object.assign({},data[k]||{});Object.entries(o[k]||{}).forEach(([kk,v])=>{if(!(kk in a)){a[kk]=v;added++}else{const w=pick?pick(a[kk],v):a[kk];if(K(w)!==K(a[kk])){a[kk]=w;added++}}});data[k]=a};
   obj('loopDone',(x,y)=>x<y?x:y);obj('rep',(x,y)=>(y.d||'')>(x.d||'')?y:x);obj('spots',(x,y)=>y.bpm>x.bpm?y:x);obj('self');obj('chal');obj('weekHits');obj('critHits');
-  obj('badges',(x,y)=>x<y?x:y);obj('jstages',(x,y)=>x<y?x:y);obj('impro',(x,y)=>x<y?x:y);obj('rmastered',(x,y)=>x<y?x:y);obj('rschool',(x,y)=>Object.assign({},y,x));obj('jmanual',(x,y)=>x<y?x:y);obj('comp');obj('nstats',(x,y)=>y[0]>x[0]?y:x);obj('songEdits');
+  obj('badges',(x,y)=>x<y?x:y);obj('jstages',(x,y)=>x<y?x:y);obj('impro',(x,y)=>x<y?x:y);obj('rmastered',(x,y)=>x<y?x:y);obj('videos',(x,y)=>x||y);obj('rschool',(x,y)=>Object.assign({},y,x));obj('jmanual',(x,y)=>x<y?x:y);obj('comp');obj('nstats',(x,y)=>y[0]>x[0]?y:x);obj('songEdits');
   {const ea=data.ear||{},eb=o.ear||{};const seen=new Set((ea.call||[]).map(K));const add=(eb.call||[]).filter(x=>!seen.has(K(x)));
     data.ear=Object.assign({},ea,{call:(ea.call||[]).concat(add).slice(-200),callLevel:Math.max(ea.callLevel||2,eb.callLevel||2)});added+=add.length}
   if((o.level||1)>data.level){data.level=o.level;data.levelStart=o.levelStart;added++}

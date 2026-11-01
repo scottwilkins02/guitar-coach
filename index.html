@@ -407,7 +407,7 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 
 <section id="v-riffs" class="view" hidden>
   <div class="viewhead"><h2>Riffs</h2><div class="row" style="gap:6px"><button class="btn small pri" id="r-impbtn">Paste a tab</button><button class="btn small" id="r-newbtn">Tap in a riff</button></div></div>
-  <div class="chips" id="r-list"></div>
+  <div id="r-list"></div>
   <div class="card" id="r-head"></div>
   <div class="card" id="rs-card"></div>
   <div id="r-neck"></div>
@@ -1193,8 +1193,12 @@ function tabHTML(ev,on,marks,rng){
 function renderRiffs(){
   if(!neckR)neckR=new Neck($('#r-neck'),{onTap:riffTap});
   const r=curRiff();if(R.bpm===null||R._for!==r.id){R.bpm=r.bpm;R._for=r.id}
-  $('#r-list').innerHTML=RIFF_PACKS.map(pk=>{const xs=allRiffs().filter(x=>(x.pack||((data.custom||[]).includes(x)?'yours':'start'))===pk.id);if(!xs.length&&pk.id!=='yours')return '';
-    return `<span class="rlh">${esc(pk.name)}</span>`+(xs.length?xs.map(x=>`<button class="chip" data-riff="${x.id}" aria-pressed="${!R.rec&&!R.imp&&x.id===r.id}">${(data.rmastered||{})[x.id]?'✓ ':''}${esc(x.name)}</button>`).join(''):'')+(pk.id==='yours'?`<button class="chip" data-radd="1">+ Add a riff</button><span class="small muted" style="flex-basis:100%">${xs.length?'Tap a riff to practise it. Your step progress is saved for each one.':'Add the real riffs from songs you love.'} To add one, tap <b>+ Add a riff</b> and paste its tab from Ultimate Guitar.</span>`:'')}).join('');
+  {const groups=RIFF_PACKS.map(pk=>({pk,xs:allRiffs().filter(x=>(x.pack||((data.custom||[]).includes(x)?'yours':'start'))===pk.id)})).filter(g=>g.xs.length);
+   const nm=(data.custom||[]).length,ms=data.rmastered||{};
+   $('#r-list').innerHTML=`<div class="ctl"><label class="lab" for="r-pick">Riff to work on</label>
+    <div class="row" style="gap:8px;flex-wrap:nowrap"><select id="r-pick" style="flex:1;min-width:0;min-height:48px;font-size:16px">${(R.rec||R.imp)?'<option value="" selected>Choose a riff…</option>':''}${groups.map(g=>`<optgroup label="${esc(g.pk.name)}">${g.xs.map(x=>`<option value="${x.id}" ${!R.rec&&!R.imp&&x.id===r.id?'selected':''}>${ms[x.id]?'✓ ':''}${esc(x.name)}</option>`).join('')}</optgroup>`).join('')}</select>
+    <button class="btn" data-radd="1" style="white-space:nowrap;min-height:48px">+ Add</button></div>
+    <p class="small muted" style="margin:6px 0 0">${nm?`You have ${nm} riff${nm===1?'':'s'} of your own, at the bottom of the list under Your riffs. `:'No riffs of your own yet. '}Tap <b>+ Add</b> to paste one from Ultimate Guitar. ✓ means mastered.</p></div>`;}
   const rsc=$('#rs-card');rsc.hidden=!!(R.rec||R.imp);$('#r-tab').classList.toggle('hidetab',!!R.hideTab&&!R.rec&&!R.imp);
   if(R.imp){renderImport();return}
   if(R.rec){
@@ -1237,6 +1241,7 @@ function playRiff(r,bpm,trainer){
 function riffTap(s,f){if(R.rec){R.rec.ev.push([s,f,+R.rec.dur]);R.rec.name=($('#r-name')||{}).value||R.rec.name;renderRiffs()}}
 $('#r-newbtn').addEventListener('click',()=>{Player.stop();R.imp=null;R.rec={name:'',dur:'1',ev:[]};renderRiffs()});
 $('#r-impbtn').addEventListener('click',()=>{Player.stop();R.rec=null;R.imp={name:'',tab:'',song:'',to:120,res:null,err:''};renderRiffs()});
+$('#v-riffs').addEventListener('change',e=>{if(e.target.id!=='r-pick'||!e.target.value)return;Player.stop();R.rec=null;R.imp=null;R.along=false;R.hideTab=R.hideNeck=false;R.id=e.target.value;R.del=null;RSV.step=null;renderRiffs()});
 $('#v-riffs').addEventListener('click',e=>{
   if(e.target.closest('[data-radd]')){$('#r-impbtn').click();setTimeout(()=>{const h=$('#r-head');if(h)h.scrollIntoView({behavior:'smooth',block:'start'})},50);return}
   const c=e.target.closest('[data-riff]');if(c){Player.stop();R.rec=null;R.imp=null;R.along=false;R.hideTab=R.hideNeck=false;R.id=c.dataset.riff;R.del=null;RSV.step=null;renderRiffs();return}

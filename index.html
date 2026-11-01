@@ -1194,7 +1194,7 @@ function renderRiffs(){
   if(!neckR)neckR=new Neck($('#r-neck'),{onTap:riffTap});
   const r=curRiff();if(R.bpm===null||R._for!==r.id){R.bpm=r.bpm;R._for=r.id}
   $('#r-list').innerHTML=RIFF_PACKS.map(pk=>{const xs=allRiffs().filter(x=>(x.pack||((data.custom||[]).includes(x)?'yours':'start'))===pk.id);if(!xs.length&&pk.id!=='yours')return '';
-    return `<span class="rlh">${esc(pk.name)}</span>`+(xs.length?xs.map(x=>`<button class="chip" data-riff="${x.id}" aria-pressed="${!R.rec&&!R.imp&&x.id===r.id}">${(data.rmastered||{})[x.id]?'✓ ':''}${esc(x.name)}</button>`).join(''):'<span class="small muted">Paste a tab to add the real riffs from songs you love.</span>')}).join('');
+    return `<span class="rlh">${esc(pk.name)}</span>`+(xs.length?xs.map(x=>`<button class="chip" data-riff="${x.id}" aria-pressed="${!R.rec&&!R.imp&&x.id===r.id}">${(data.rmastered||{})[x.id]?'✓ ':''}${esc(x.name)}</button>`).join(''):'')+(pk.id==='yours'?`<button class="chip" data-radd="1">+ Add a riff</button><span class="small muted" style="flex-basis:100%">${xs.length?'Tap a riff to practise it. Your step progress is saved for each one.':'Add the real riffs from songs you love.'} To add one, tap <b>+ Add a riff</b> and paste its tab from Ultimate Guitar.</span>`:'')}).join('');
   const rsc=$('#rs-card');rsc.hidden=!!(R.rec||R.imp);$('#r-tab').classList.toggle('hidetab',!!R.hideTab&&!R.rec&&!R.imp);
   if(R.imp){renderImport();return}
   if(R.rec){
@@ -1238,6 +1238,7 @@ function riffTap(s,f){if(R.rec){R.rec.ev.push([s,f,+R.rec.dur]);R.rec.name=($('#
 $('#r-newbtn').addEventListener('click',()=>{Player.stop();R.imp=null;R.rec={name:'',dur:'1',ev:[]};renderRiffs()});
 $('#r-impbtn').addEventListener('click',()=>{Player.stop();R.rec=null;R.imp={name:'',tab:'',song:'',to:120,res:null,err:''};renderRiffs()});
 $('#v-riffs').addEventListener('click',e=>{
+  if(e.target.closest('[data-radd]')){$('#r-impbtn').click();setTimeout(()=>{const h=$('#r-head');if(h)h.scrollIntoView({behavior:'smooth',block:'start'})},50);return}
   const c=e.target.closest('[data-riff]');if(c){Player.stop();R.rec=null;R.imp=null;R.along=false;R.hideTab=R.hideNeck=false;R.id=c.dataset.riff;R.del=null;RSV.step=null;renderRiffs();return}
   const sg=e.target.closest('[data-g="dur"] button');if(sg){R.rec.name=$('#r-name').value;R.rec.dur=sg.dataset.v;renderRiffs();return}
   const tg=e.target.closest('[data-tg]');if(tg){R[tg.dataset.tg]=!R[tg.dataset.tg];tg.setAttribute('aria-pressed',R[tg.dataset.tg]);if(Player.on&&Player.owner==='riff'){playRiff(curRiff(),R.bpm,R.trainer)}return}
@@ -2899,7 +2900,15 @@ function rsTapOne(){const T=RSV.tap;T.t.push(performance.now()/1000);try{audio()
 /* import screen */
 function renderImport(){const I=R.imp;
   $('#r-head').innerHTML=`<p class="eyebrow">Add a riff from a tab</p><h2 style="font-size:28px">Paste a tab</h2>
-   <p class="small">Open the riff on Ultimate Guitar (or any tab), select the text version of the tab lines and copy them. Paste below. It stays private to you: saved in your progress, never in the app itself.</p>
+   <details class="card" open style="padding:12px 14px"><summary style="font-weight:700;cursor:pointer">How to add a riff</summary>
+   <ol class="small" style="margin:8px 0 0;padding-left:20px;display:grid;gap:6px">
+    <li>In Ultimate Guitar, open the song and switch to the plain text tab (not Tab Pro or sheet music).</li>
+    <li>Press and hold on the first tab line, then drag to select all six lines (e|, B|, G|, D|, A|, E|) of the riff. You can include several bars. Tap <b>Copy</b>.</li>
+    <li>Come back here, give it a <b>Name</b>, pick the <b>Song</b> if it is in the app (that gives you the band backing; otherwise leave None) and set the <b>Full speed</b> bpm (leave 120 if unsure).</li>
+    <li>Press and hold in the <b>Tab</b> box below, tap <b>Paste</b>, then tap <b>Read the tab</b>.</li>
+    <li>Check the tab and the neck match what you copied, then tap <b>Save riff</b>. It appears under <b>Your riffs</b> and opens at step 1, Hear it.</li>
+   </ol>
+   <p class="small muted" style="margin:8px 0 0">The timing is guessed from the spacing in the tab. If it sounds off, open the riff and use Tap in a riff to set the rhythm. Riffs you paste stay private to you: saved in your progress, not in the app.</p></details>
    <div class="ctl"><label class="lab" for="ri-name">Name</label><input type="text" id="ri-name" value="${esc(I.name)}" placeholder="e.g. Johnny B. Goode intro"></div>
    <div class="grid2"><div class="ctl"><label class="lab" for="ri-song">Song (for the band backing)</label><select id="ri-song"><option value="">None</option>${SONGS.map(s=>`<option value="${s.id}" ${s.id===I.song?'selected':''}>${esc(s.title)}</option>`).join('')}</select></div>
    <div class="ctl"><label class="lab" for="ri-to">Full speed (bpm)</label><input type="text" inputmode="numeric" id="ri-to" value="${I.to}"></div></div>

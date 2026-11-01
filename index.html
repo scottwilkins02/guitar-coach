@@ -347,6 +347,16 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 .imchk[aria-pressed="true"]:after{content:"✓";position:absolute;left:15px;top:50%;margin-top:-10px;color:#fff;font-weight:800;font-size:13px}
 .imstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.imstats span{border:1px solid var(--line);border-radius:8px;padding:8px;color:var(--muted)}.imstats b{display:block;font:800 24px/1 var(--fd);color:var(--ink)}
 .lg{padding:0 6px;border-radius:4px}.lg.r{background:#d2462a;color:#fff}.lg.c{background:#f3ede2;color:#1a1410;border:1px solid #c8b78f}.lg.b{border:2px solid #4aa8ff}
+.rlh{flex-basis:100%;font:700 11px/1 var(--fm);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.rsbar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}
+.rsbar button{appearance:none;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:6px 2px;font:700 10.5px/1.15 var(--fb);color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;min-width:0}
+.rsbar button i{font-style:normal;width:22px;height:22px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font:700 11px var(--fm)}
+.rsbar button.dn i{background:#f0a640;border-color:#b8661a;color:#1a0e02}.rsbar button[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);background:var(--accent-soft)}
+.rsladder{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.rsladder button{appearance:none;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:8px 2px;display:flex;flex-direction:column;align-items:center;cursor:pointer;color:inherit;font:inherit}
+.rsladder button b{font:800 20px/1 var(--fd)}.rsladder button span{font-size:11px;color:var(--muted)}.rsladder button.dn{background:var(--accent-soft);border-color:var(--accent)}
+.rstap{appearance:none;width:100%;min-height:120px;border:0;border-radius:14px;background:var(--accent);color:var(--on-accent);font:800 28px var(--fd);text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.tab.hidetab span{color:transparent}.tab.hidetab{position:relative}.tab.hidetab:after{content:"Tab hidden: play from memory";position:absolute;inset:0;display:grid;place-items:center;font:700 14px var(--fb);color:var(--muted)}
 [hidden]{display:none!important}
 </style>
 
@@ -394,9 +404,10 @@ nav.tabs button[aria-current="page"]::before{content:"";position:absolute;top:0;
 </section>
 
 <section id="v-riffs" class="view" hidden>
-  <div class="viewhead"><h2>Riffs</h2><button class="btn small" id="r-newbtn">Record a riff</button></div>
+  <div class="viewhead"><h2>Riffs</h2><div class="row" style="gap:6px"><button class="btn small pri" id="r-impbtn">Paste a tab</button><button class="btn small" id="r-newbtn">Tap in a riff</button></div></div>
   <div class="chips" id="r-list"></div>
   <div class="card" id="r-head"></div>
+  <div class="card" id="rs-card"></div>
   <div id="r-neck"></div>
   <div class="tab" id="r-tab"></div>
   <div class="card" id="r-ctl"></div>
@@ -722,9 +733,9 @@ class Neck{
   set(marks){this.marks=marks.filter(m=>m.f>=0&&m.f<=this.frets);this.draw()}
   draw(){this.g.innerHTML=this.marks.map(m=>`<g class="m ${m.cls||''}" data-k="${m.s}-${m.f}" transform="translate(${this.cx(m.f)},${this.cy(m.s)})"><g class="b"><circle r="13"/><text dy="4">${esc(m.label??'')}</text></g></g>`).join('')}
   el(s,f){return this.g.querySelector(`[data-k="${s}-${f}"]`)}
-  active(on,next){$$('.m.on,.m.next',this.g).forEach(x=>x.classList.remove('on','next'));
-    if(next){const n=this.el(...next);if(n)n.classList.add('next')}
-    if(on){const a=this.el(...on);if(a)a.classList.add('on')}}
+  active(on,next){$$('.m.on,.m.next',this.g).forEach(x=>x.classList.remove('on','next'));const L=v=>!v?[]:Array.isArray(v[0])?v:[v];
+    L(next).forEach(p=>{const n=this.el(...p);if(n)n.classList.add('next')});
+    L(on).forEach(p=>{const a=this.el(...p);if(a)a.classList.add('on')})}
   flash(s,f,cls,label,ms=600){let x=this.el(s,f),tmp=false;
     if(!x){this.g.insertAdjacentHTML('beforeend',`<g class="m" data-k="${s}-${f}" transform="translate(${this.cx(f)},${this.cy(s)})"><g class="b"><circle r="13"/><text dy="4">${esc(label||'')}</text></g></g>`);x=this.el(s,f);tmp=true}
     x.classList.add(cls);setTimeout(()=>{if(tmp)x.remove();else x.classList.remove(cls)},ms)}
@@ -1147,11 +1158,22 @@ function sayNext(){const strs=SAY.strs==='EA'?[0,1]:[0,1,2,3,4,5];const prev=SAY
   const n=$('#say-now'),st=$('#say-str'),c=$('#say-count');if(n)n.textContent=COMMON[SAY.cur.pc];if(st)st.textContent=SAY_STR[SAY.cur.s];if(c)c.textContent=SAY.count+' notes'}
 
 /* ================= RIFFS ================= */
-const R={id:'sna',bpm:null,loop:true,click:true,trainer:true,rec:null,del:null};
+
+const RIFF_PACKS=[{id:'start',name:'Starter riffs'},{id:'chuck',name:'Chuck Berry-style rock and roll · in A'},{id:'yours',name:'Your riffs'}];
+const shufBar=(L)=>{const b=[[L,0,0],[L+1,2,.667],[L,0,0],[L+1,2,.333],[L,0,0],[L+1,4,.667],[L,0,0],[L+1,4,.333]];return b.concat(b)};
+const dsT=(n)=>Array(n).fill(0).flatMap(()=>[[4,5,0],[5,5,1/3]]);
+const PACK_RIFFS=[
+ {id:'cbshuf',pack:'chuck',song:'jbg',name:'Boogie shuffle rhythm',sub:'The rhythm part: 5 to 6 on the low strings',bpm:80,to:150,why:'The engine of rock and roll. Two strings at once: the open string plus fret 2, then stretch to fret 4 with your ring or little finger, back and forth with a swung, long-short feel. A, D, A, E. Palm mute lightly.',ev:[...shufBar(1),...shufBar(2),...shufBar(1),...shufBar(0)],backing:[[9,'7'],[2,'7'],[9,'7'],[4,'7']]},
+ {id:'cbds',pack:'chuck',song:'jbg',name:'Double-stops on top',sub:'Two strings at once, fret 5, B and high e',bpm:70,to:130,why:'Chuck Berry’s lead sound is mostly two notes at once. Flatten your index finger across the B and high e strings at fret 5 and pick both in fast triplets, then the fret 8 pair. Original lick, in his style.',ev:[...dsT(6),[4,5,0],[5,5,1],[4,8,0],[5,8,.5],[4,5,0],[5,5,.5]]},
+ {id:'cbdsb',pack:'chuck',song:'jbg',name:'Double-stop bend',sub:'Bend the G string while holding the B',bpm:60,to:120,why:'Ring finger on G string fret 7, index on B string fret 5. Bend the G string up a tone while the B string note keeps ringing: the two meet at the same pitch. Use the bend meter (Lead, Technique) to check the bend on its own first.',ev:[[3,7,0,'b2'],[4,5,1],[3,7,0,'b2r'],[4,5,1],[4,5,0],[5,5,1],[2,7,1]]},
+ {id:'cb1',pack:'chuck',song:'jbg',name:'Chuck lick 1 · triplets',sub:'Easy: double-stop triplets into a bend',bpm:70,to:130,why:'Triplet double-stops, then the double-stop bend, landing on A (D string fret 7). Original lick in the style.',ev:[...dsT(6),[3,7,0,'b2'],[4,5,1],[2,7,1]]},
+ {id:'cb2',pack:'chuck',song:'jbg',name:'Chuck lick 2 · slide in',sub:'Medium: slide into the double-stop',bpm:70,to:130,why:'Start two frets low on the B and high e strings and slide both up into fret 5, then triplets, a short bend, and down to the root. Original lick in the style.',ev:[[4,3,0],[5,3,.25],[4,5,0,'/'],[5,5,.75,'/'],...dsT(3),[3,7,0,'b2'],[4,5,.5],[3,5,.5],[2,7,1]]},
+ {id:'cb3',pack:'chuck',song:'jbg',name:'Chuck lick 3 · the whole move',sub:'Harder: two bars, double-stops to a bass-string run',bpm:70,to:130,why:'Bar 1 is all double-stops and bends; bar 2 walks down to the low strings with a hammer-on and the major third (A string fret 4) that gives rock and roll its bright sound. Original lick in the style.',ev:[...dsT(6),[3,7,0,'b2'],[4,5,.5],[3,7,0,'b2'],[4,5,.5],[4,5,0],[5,5,1],[3,5,.5],[3,6,.25],[3,7,.25,'h'],[2,7,.5],[1,7,.5],[1,4,.5],[0,5,1.5]]}];
+const R={id:'sna',bpm:null,loop:true,click:true,trainer:true,rec:null,del:null,imp:null,along:false,hideTab:false,hideNeck:false};
 let neckR=null;
-function allRiffs(){return RIFFS.concat(data.custom||[])}
+function allRiffs(){return RIFFS.concat(PACK_RIFFS,data.custom||[])}
 function curRiff(){return allRiffs().find(r=>r.id===R.id)||RIFFS[0]}
-function riffSeq(r){let at=0;const events=r.ev.map(([s,f,d,tech],i)=>{const pv=i?r.ev[i-1]:null;const e={at,notes:[[s,f]],idx:i,tech,dur:d,from:pv&&pv[0]===s?pv[1]:null};at+=d;return e});
+function riffSeq(r){let at=0;const ev=r.ev;const events=ev.map(([s,f,d,tech],i)=>{let pf=null;for(let j=i-1;j>=Math.max(0,i-4);j--)if(ev[j][0]===s){pf=ev[j][1];break}let dur=d;if(!dur){for(let j=i+1;j<ev.length;j++)if(ev[j][2]>0){dur=ev[j][2];break}}const e={at,notes:[[s,f]],idx:i,tech,dur:dur||1,from:pf};at+=d;return e});
   const beats=Math.max(1,Math.ceil(at-1e-6));
   if(r.backing)r.backing.forEach(([root,q],bar)=>{const fr=autoVoicing(root,q);[0,2].forEach(b=>events.push({at:bar*4+b,strum:{frets:fr,dir:'d',vel:.35},bk:true}))});
   return {beats,events}}
@@ -1159,14 +1181,19 @@ function riffMarks(r,rootPc){const seen=new Map();r.ev.forEach(([s,f])=>{const k
 function tabHTML(ev,on,marks,rng){
   if(!ev.length)return 'Tap the neck to add notes.';
   const lab=(f,t)=>!t?String(f):t==='h'?'h'+f:t==='p'?'p'+f:t==='/'?'/'+f:t==='~'?f+'~':t==='b2r'?f+'br':t[0]==='b'?f+'b':String(f);
-  const cols=ev.map(([s,f,d,t])=>{const L=lab(f,t);return {s,L,w:L.length+2}});
+  const gs=riffGroups(ev);const cols=gs.map(g=>{const by={};let w=1;for(let k=g.a;k<=g.b;k++){const [s,f,d,t]=ev[k];const L=lab(f,t);by[s]=L;w=Math.max(w,L.length)}return {by,w:w+2,g}});
+  const clsOf=g=>{for(let k=g.a;k<=g.b;k++)if(k===on)return 'on';if(marks){let worst='';for(let k=g.a;k<=g.b;k++){const m=marks[k];if(!m)continue;const c=m.st==='ok'?(marks.med!==undefined&&Math.abs(m.off-marks.med)>60?'late':'good'):'bad';if(c==='bad'||!worst||(c==='late'&&worst==='good'))worst=c}if(worst)return worst}
+    if(rng&&g.b>=rng[0]&&g.a<=rng[1])return 'rng';return ''};
   const rows=[5,4,3,2,1,0].map(s=>{const lb=['E','A','D','G','B','e'][s];
-    return lb+'|'+cols.map((c,i)=>{const txt=c.s===s?('-'+c.L).padEnd(c.w,'-'):'-'.repeat(c.w);const cl=i===on?'on':marks&&marks[i]?(marks[i].st==='ok'?(marks.med!==undefined&&Math.abs(marks[i].off-marks.med)>60?'late':'good'):'bad'):rng&&i>=rng[0]&&i<=rng[1]?'rng':'';return `<span${cl?` class="${cl}"`:''}>${txt}</span>`}).join('')+'|'});
+    return lb+'|'+cols.map(c=>{const txt=c.by[s]!==undefined?('-'+c.by[s]).padEnd(c.w,'-'):'-'.repeat(c.w);const cl=clsOf(c.g);return `<span${cl?` class="${cl}"`:''}>${txt}</span>`}).join('')+'|'});
   return rows.join('\n')}
 function renderRiffs(){
   if(!neckR)neckR=new Neck($('#r-neck'),{onTap:riffTap});
   const r=curRiff();if(R.bpm===null||R._for!==r.id){R.bpm=r.bpm;R._for=r.id}
-  $('#r-list').innerHTML=allRiffs().map(x=>`<button class="chip" data-riff="${x.id}" aria-pressed="${!R.rec&&x.id===r.id}">${esc(x.name)}</button>`).join('');
+  $('#r-list').innerHTML=RIFF_PACKS.map(pk=>{const xs=allRiffs().filter(x=>(x.pack||((data.custom||[]).includes(x)?'yours':'start'))===pk.id);if(!xs.length&&pk.id!=='yours')return '';
+    return `<span class="rlh">${esc(pk.name)}</span>`+(xs.length?xs.map(x=>`<button class="chip" data-riff="${x.id}" aria-pressed="${!R.rec&&!R.imp&&x.id===r.id}">${(data.rmastered||{})[x.id]?'✓ ':''}${esc(x.name)}</button>`).join(''):'<span class="small muted">Paste a tab to add the real riffs from songs you love.</span>')}).join('');
+  const rsc=$('#rs-card');rsc.hidden=!!(R.rec||R.imp);$('#r-tab').classList.toggle('hidetab',!!R.hideTab&&!R.rec&&!R.imp);
+  if(R.imp){renderImport();return}
   if(R.rec){
     $('#r-head').innerHTML=`<p class="eyebrow">Recording a riff</p><p>Tap notes on the neck in order. Pick the length before each tap.</p>
      <div class="ctl"><label class="lab" for="r-name">Name</label><input type="text" id="r-name" value="${esc(R.rec.name)}" placeholder="e.g. Mr Brightside intro"></div>
@@ -1178,7 +1205,7 @@ function renderRiffs(){
     return}
   const custom=!RIFFS.find(x=>x.id===r.id);
   $('#r-head').innerHTML=`<p class="eyebrow">${esc(r.sub||'Your riff')}</p><h2 style="font-size:30px">${esc(r.name)}</h2><p>${esc(r.why||'Recorded by you.')}</p>`;
-  neckR.set(riffMarks(r));neckR.active(null,[r.ev[0][0],r.ev[0][1]]);neckR.scrollTo(Math.max(...r.ev.map(e=>e[1]))-3);
+  neckR.set(R.hideNeck?[]:riffMarks(r));if(!R.hideNeck)riffActive(neckR,r.ev,r.ev.length-1);neckR.scrollTo((Math.max(...r.ev.map(e=>e[1]))+Math.min(...r.ev.map(e=>e[1])))/2);if(RSV.tap)RSV.tap=null;rsc.innerHTML=rsCardHTML();
   $('#r-tab').innerHTML=tabHTML(r.ev,-1);
   const to=r.to||Math.min(160,r.bpm+40);
   $('#r-ctl').innerHTML=`<div class="row"><button class="btn pri" data-act="rplay" id="r-play">${Player.on&&Player.owner==='riff'?'Stop':'Play'}</button>
@@ -1195,9 +1222,9 @@ function renderRiffs(){
   renderRiffCheckCard();
 }
 function playRiff(r,bpm,trainer){
-  const seq=riffSeq(r);const ev=r.ev;const to=r.to||Math.min(160,r.bpm+40);
+  const seq=R.along?riffSeqAlong(r):riffSeq(r);const ev=r.ev;const to=r.to||Math.min(160,r.bpm+40);
   Player.start(seq,{bpm,loop:R.loop,click:R.click,owner:'riff',trainer:trainer?{to,step:5}:null,
-    onStep:e=>{if(e.bk||e.idx===undefined)return;const i=e.idx;const nx=ev[(i+1)%ev.length];neckR.active([ev[i][0],ev[i][1]],[nx[0],nx[1]]);
+    onStep:e=>{if(e.bk||e.idx===undefined)return;const i=e.idx;riffActive(neckR,ev,i);
       $('#r-tab').innerHTML=tabHTML(ev,i)},
     onBeat:(b)=>{$$('#r-beats i').forEach((x,k)=>x.classList.toggle('on',k===b%4))},
     onLoop:(b)=>{R.bpm=b;const o=$('#r-bpmout');if(o)o.textContent=b+' bpm';const s=$('#r-bpm');if(s)s.value=b},
@@ -1205,9 +1232,10 @@ function playRiff(r,bpm,trainer){
   const p=$('#r-play');if(p)p.textContent='Stop';
 }
 function riffTap(s,f){if(R.rec){R.rec.ev.push([s,f,+R.rec.dur]);R.rec.name=($('#r-name')||{}).value||R.rec.name;renderRiffs()}}
-$('#r-newbtn').addEventListener('click',()=>{Player.stop();R.rec={name:'',dur:'1',ev:[]};renderRiffs()});
+$('#r-newbtn').addEventListener('click',()=>{Player.stop();R.imp=null;R.rec={name:'',dur:'1',ev:[]};renderRiffs()});
+$('#r-impbtn').addEventListener('click',()=>{Player.stop();R.rec=null;R.imp={name:'',tab:'',song:'',to:120,res:null,err:''};renderRiffs()});
 $('#v-riffs').addEventListener('click',e=>{
-  const c=e.target.closest('[data-riff]');if(c){Player.stop();R.rec=null;R.id=c.dataset.riff;R.del=null;renderRiffs();return}
+  const c=e.target.closest('[data-riff]');if(c){Player.stop();R.rec=null;R.imp=null;R.along=false;R.hideTab=R.hideNeck=false;R.id=c.dataset.riff;R.del=null;RSV.step=null;renderRiffs();return}
   const sg=e.target.closest('[data-g="dur"] button');if(sg){R.rec.name=$('#r-name').value;R.rec.dur=sg.dataset.v;renderRiffs();return}
   const tg=e.target.closest('[data-tg]');if(tg){R[tg.dataset.tg]=!R[tg.dataset.tg];tg.setAttribute('aria-pressed',R[tg.dataset.tg]);if(Player.on&&Player.owner==='riff'){playRiff(curRiff(),R.bpm,R.trainer)}return}
   const a=e.target.closest('[data-act]');if(!a)return;const act=a.dataset.act;
@@ -1411,6 +1439,10 @@ const SONGS=[
   sections:[['Verse','D A F#m Esus4'],['Chorus','D A F#m E']],loop:'D A F#m E',
   note:'Matches the Hooktheory transcription.',
   tip:'A major pentatonic uses the same notes as F# minor pentatonic. The big vocal hook sits inside this scale, so working it out on guitar is a good first lead line.'},
+ {id:'jbg',title:'Johnny B. Goode',artist:'Chuck Berry',key:{root:9,minor:false},keyLabel:'A major here (the record is in B♭)',lead:{root:9,type:'minpent'},conf:'partly',riffs:['cbshuf','cbds','cbdsb','cb1','cb2','cb3'],
+  sections:[['Form','12-bar blues, shuffle feel'],['Rhythm','Boogie 5 to 6 pattern (Riffs tab)'],['Intro and solos','Paste them from your tab: Riffs, Paste a tab']],loop:'A7:16 D7:8 A7:8 E7:4 D7:4 A7:8',
+  note:'Taught in A, the usual teaching key. Most sources put the record in B♭: move every shape up one fret, or capo 1. The 12-bar form is standard; check the details against your tab.',
+  tip:'Chuck Berry mixes A minor pentatonic box 1 (fret 5) with double-stops on the top strings and the major third (C#). Learn the pack riffs below, then import the real intro.'},
  {id:'sna',title:'Seven Nation Army',artist:'The White Stripes',key:{root:4,minor:true},keyLabel:'E minor',lead:{root:4,type:'minpent'},conf:'partly',
   sections:[['Main riff','E E G E D C B (Riffs tab, A string)']],loop:'E5 C5:2 B5:2',
   note:'Key and riff notes confirmed. The backing loop is a simplified power chord version for jamming, not the record.',
@@ -1491,7 +1523,12 @@ function renderSongs(){
    ${s.tip?`<p>${esc(s.tip)}</p>`:''}
    ${SONGTONE[s.id]?`<p class="small"><b>Amp:</b> Voice ${vById(SONGTONE[s.id][0]).slot} ${esc(vById(SONGTONE[s.id][0]).name)}, F/X ${esc(SONGTONE[s.id][1])}. Knobs: ${esc(SONGTONE[s.id][2])}. <button class="btn small ghost" data-gact="tone">Open tone plan</button></p>`:''}
    <div class="row"><div class="seg" data-g="gbox">${[0,1,2,3,4].map(b=>`<button data-v="${b}">Box ${b+1}</button>`).join('')}</div>
-   <button class="btn small" data-gact="fill">Hear a starter fill</button></div></div>`;
+   <button class="btn small" data-gact="fill">Hear a starter fill</button></div></div>
+   ${s.riffs||true?`<div class="card"><h3 class="sec" style="margin:0">Riffs for this song</h3>
+    ${(s.riffs||[]).map(id=>{const x=PACK_RIFFS.find(q=>q.id===id);return x?`<button class="song lesson" data-griff="${x.id}"><span class="n ${(data.rmastered||{})[x.id]?'done':''}">${(data.rmastered||{})[x.id]?'✓':'♪'}</span><span><b style="font-size:18px">${esc(x.name)}</b><br><span class="small">${esc(x.sub)}</span></span></button>`:''}).join('')}
+    ${(data.custom||[]).filter(x=>x.song===s.id).map(x=>`<button class="song lesson" data-griff="${x.id}"><span class="n ${(data.rmastered||{})[x.id]?'done':''}">${(data.rmastered||{})[x.id]?'✓':'♪'}</span><span><b style="font-size:18px">${esc(x.name)}</b><br><span class="small">From your tab</span></span></button>`).join('')}
+    <button class="btn pri" data-gimp="${s.id}" style="align-self:start">Add the real riff from your tab</button>
+    <p class="small muted">Paste the intro, a riff or a solo from Ultimate Guitar. It plays on the neck with the Riff school steps, the looper and the band backing for this song.</p></div>`:''}`;
   markSeg(body,'gbox',G.box);
   nw.hidden=false;
   const cur=playing&&G.chord>=0?list[G.chord]:null;
@@ -1516,6 +1553,8 @@ function startSongLoop(s){const list=songLoop(s);if(!list.length)return;G.chord=
   const b=$('#g-play');if(b)b.textContent='Stop'}
 $('#g-mode').addEventListener('click',e=>{const b=e.target.closest('[data-gm]');if(!b)return;if(Player.on&&['song','fill','lp'].includes(Player.owner))Player.stop();G.mode=b.dataset.gm;KT.q=null;KT.sum=null;LP.id=null;LP.step=0;renderSongs()});
 $('#v-songs').addEventListener('click',e=>{
+  const gr=e.target.closest('[data-griff]');if(gr){Player.stop();R.rec=null;R.imp=null;goTab('riffs',{tab:'riffs',riff:gr.dataset.griff});return}
+  const gi=e.target.closest('[data-gimp]');if(gi){Player.stop();const sg=SONGS.find(x=>x.id===gi.dataset.gimp);R.rec=null;R.imp={name:sg.title+' intro',tab:'',song:sg.id,to:120,res:null,err:''};goTab('riffs');return}
   const sg=e.target.closest('[data-song]');if(sg){G.id=sg.dataset.song;G.edit=false;G.box=0;renderSongs();window.scrollTo(0,0);return}
   const bx=e.target.closest('[data-g="gbox"] button');if(bx){G.box=+bx.dataset.v;renderSongs();return}
   const a=e.target.closest('[data-gact]');if(!a)return;const s=SONGS.find(x=>x.id===G.id);const act=a.dataset.gact;
@@ -2327,7 +2366,7 @@ function meterSub(fr){const l=$('#mic-lvl');if(l)l.style.width=Math.min(100,Math
 /* judge played notes against expected ones: each expected note may claim the nearest unclaimed heard note */
 function judgeNotes(exp,det,lat){const used=new Set(),out=[];
   exp.forEach(x=>{let bi=-1,bd=1e9;det.forEach((d,i)=>{if(used.has(i))return;const dt=d.t-lat-x.t;if(Math.abs(dt)<=x.win&&Math.abs(dt)<Math.abs(bd)){bd=dt;bi=i}});
-    if(bi<0){out.push({i:x.i,st:'miss'});return}used.add(bi);const d=det[bi];out.push({i:x.i,st:d.pc===x.pc?'ok':'wrong',heard:d.pc,off:bd*1000})});
+    if(bi<0){out.push({i:x.i,st:'miss'});return}used.add(bi);const d=det[bi];out.push({i:x.i,st:(x.pcs?x.pcs.includes(d.pc):d.pc===x.pc)?'ok':'wrong',heard:d.pc,off:bd*1000})});
   const offs=out.filter(o=>o.st==='ok').map(o=>o.off).sort((a,b)=>a-b);const med=offs.length?offs[offs.length>>1]:0;
   const spr=offs.length?offs.reduce((s,o)=>s+Math.abs(o-med),0)/offs.length:0;
   return {out,hit:out.filter(o=>o.st==='ok').length,n:exp.length,med:Math.round(med),spr:Math.round(spr)}}
@@ -2387,14 +2426,14 @@ function plNext(){if(!PL.active)return;PL.i++;
 
 /* ---- Riff check: play along with the click, the app marks each note and your timing ---- */
 const RC={on:false,exp:null,det:[],res:null,ri:null,bpm:0};
-function rcExpected(r,bpm,start,evs){const spb=60/bpm;let at=0;return (evs||r.ev).map(([s,f,d],i)=>{const x={i,t:start+at*spb,pc:pcOf(s,f),win:Math.max(0.09,Math.min(0.25,0.45*d*spb))};at+=d;return x})}
+function rcExpected(r,bpm,start,evs){const spb=60/bpm,E=evs||r.ev;let at=0;const out=[];riffGroups(E).forEach(g=>{const d=E[g.b][2];const pcs=[];for(let k=g.a;k<=g.b;k++)pcs.push(pcOf(E[k][0],E[k][1]));out.push({i:g.b,t:start+at*spb,pc:pcs[pcs.length-1],pcs,win:Math.max(0.09,Math.min(0.25,0.45*d*spb))});at+=d});return out}
 async function riffCheck(){const r=curRiff();Player.stop();RC.res=null;rcMsg('Starting the microphone…');
   if(!await micStart()){rcMsg(micErrText(),'bad');return}
   RC.on=true;RC.det=[];RC.exp=null;RC.ri=r.id;RC.bpm=R.bpm;const sub=n=>{if(RC.on)RC.det.push(n)};MIC.noteSubs.add(sub);MIC.frameSubs.add(meterSub);
   let at=0;const events=r.ev.map(([s,f,d],i)=>{const e={at,idx:i};at+=d;return e});
   Player.start({beats:Math.max(1,Math.ceil(at-1e-6)),events},{bpm:R.bpm,loop:false,click:true,owner:'check',
     onBeat:(b,count)=>{if(!count&&!RC.exp)RC.exp=rcExpected(r,R.bpm,Player.loopStart);$$('#r-beats i').forEach((x,k)=>x.classList.toggle('on',k===b%4))},
-    onStep:e=>{if(e.idx!==undefined){$('#r-tab').innerHTML=tabHTML(r.ev,e.idx);neckR.active([r.ev[e.idx][0],r.ev[e.idx][1]])}},
+    onStep:e=>{if(e.idx!==undefined){$('#r-tab').innerHTML=tabHTML(r.ev,e.idx);riffActive(neckR,r.ev,e.idx)}},
     onStop:()=>{setTimeout(()=>{MIC.noteSubs.delete(sub);RC.on=false;micStop();if(RC.exp)rcFinish(r);else rcMsg('Stopped.')},350)}});
   rcMsg('Count-in, then play along. The app is listening, not playing.')}
 function rcFinish(r){const res=judgeNotes(RC.exp,RC.det,micLat());RC.res=res;
@@ -2469,7 +2508,7 @@ async function spotPlay(){const r=curRiff();if(SP.on){Player.stop();return}
   const sub=n=>{if(SP.on)SP.det.push(n)};if(SP.judge){MIC.noteSubs.add(sub);MIC.frameSubs.add(meterSub)}
   Player.start({beats,events},{bpm:SP.bpm,loop:true,click:true,owner:'spot',
     onBeat:(b,count)=>{if(!count&&SP.passStart===null)spotPassStart()},
-    onStep:e=>{if(e.idx!==undefined){neckR.active([r.ev[e.idx][0],r.ev[e.idx][1]]);$('#r-tab').innerHTML=tabHTML(r.ev,e.idx)}},
+    onStep:e=>{if(e.idx!==undefined){riffActive(neckR,r.ev,e.idx);$('#r-tab').innerHTML=tabHTML(r.ev,e.idx)}},
     onLoop:()=>{if(SP.judge&&SP.passStart!==null){const ps=SP.passStart,pb=SP.passBpm||Player.bpm;setTimeout(()=>{const exp=rcExpected(r,pb,ps,ev);const res=judgeNotes(exp,SP.det.filter(d=>d.t>=ps-0.3),micLat());spotMark(res.hit===res.n,res)},250)}
       SP.passBpm=Player.bpm;spotPassStart()},
     onStop:()=>{SP.on=false;MIC.noteSubs.delete(sub);if(SP.judge)micStop();const p=$('#sp-play');if(p)p.textContent='Loop the spot';if(neckR)neckR.active(null,null)}});
@@ -2774,6 +2813,117 @@ document.addEventListener('click',e=>{if(TAB!=='scales')return;
 document.addEventListener('change',e=>{if(e.target.id==='im-song'){if(Player.on)Player.stop();IM.song=e.target.value;renderLearn()}});
 document.addEventListener('input',e=>{if(e.target.id==='im-bpm'){IM.bpm=+e.target.value;const o=$('#im-bpmout');if(o)o.textContent=IM.bpm+' bpm';if(Player.on&&Player.owner==='imjam')Player.setBpm(IM.bpm)}});
 
+/* ================= RIFF SCHOOL: groups (double-stops), tab import, tap rhythm, six-step path ================= */
+/* A group is notes struck together: every note but the last in a group has length 0. */
+function riffGroups(ev){const g=[];let st=0;ev.forEach((e,i)=>{if(e[2]>0||i===ev.length-1){g.push({a:st,b:i});st=i+1}});return g}
+function grpOf(ev,i){return riffGroups(ev).find(g=>i>=g.a&&i<=g.b)||{a:i,b:i}}
+function grpNotes(ev,g){const out=[];for(let k=g.a;k<=g.b;k++)out.push([ev[k][0],ev[k][1]]);return out}
+function riffActive(neck,ev,i){if(R.hideNeck)return;const gs=riffGroups(ev);const k=gs.findIndex(g=>i>=g.a&&i<=g.b);if(k<0)return;neck.active(grpNotes(ev,gs[k]),grpNotes(ev,gs[(k+1)%gs.length]))}
+/* Read a plain-text guitar tab (six string lines per system). Rhythm is estimated from the spacing; tap it in for accuracy. */
+function parseTab(txt){const lines=String(txt||'').replace(/\r/g,'').replace(/\t/g,'    ').split('\n');
+  const isStr=l=>/^\s*[A-Ga-g][#b]?\s*[|:]/.test(l)&&/[-0-9]/.test(l.replace(/^\s*[A-Ga-g][#b]?/,''));
+  const blocks=[];let cur=[];lines.forEach(l=>{if(isStr(l))cur.push(l);else{if(cur.length>=6)blocks.push(cur.slice(0,6));cur=[]}});if(cur.length>=6)blocks.push(cur.slice(0,6));
+  const groups=[];const barAt=new Set();
+  blocks.forEach(bl=>{const rows=bl.map(l=>l.replace(/^\s*[A-Ga-g][#b]?\s*[|:]/,''));const W=Math.max(...rows.map(r=>r.length));const at={};
+    rows.forEach((row,ri)=>{const s=5-ri;let c=0;while(c<row.length){const ch=row[c];
+      if(/[0-9]/.test(ch)){let j=c+1;if(j<row.length&&/[0-9]/.test(row[j])&&+row.slice(c,j+1)<=24)j++;const f=+row.slice(c,j);
+        let tech='';const pre=row[c-1];if(pre==='h'||pre==='p')tech=pre;else if(pre==='/'||pre==='\\'||pre==='s')tech='/';
+        let k=j;if(row[k]==='b'){k++;let m=k;while(m<row.length&&/[0-9]/.test(row[m])&&m-k<2)m++;const tg=m>k?+row.slice(k,m):null;k=m;tech='b'+(tg!=null&&tg>f?Math.min(3,tg-f):2);
+          if(row[k]==='r'){tech+='r';k++;while(k<row.length&&/[0-9]/.test(row[k]))k++}}
+        else if(row[k]==='~'){tech=tech||'~'}
+        (at[c]=at[c]||[]).push({s,f,tech});c=Math.max(j,k);continue}
+      c++}});
+    let cols=Object.keys(at).map(Number).sort((a,b)=>a-b);
+    for(let k=0;k<cols.length-1;k++){const a=at[cols[k]],b=at[cols[k+1]];if(cols[k+1]-cols[k]===1&&!b.some(n=>a.some(m=>m.s===n.s))){at[cols[k]]=a.concat(b);delete at[cols[k+1]];cols.splice(k+1,1);k--}}
+    if(groups.length)barAt.add(groups.length);const bars=[];for(let c=0;c<rows[0].length;c++)if(rows[0][c]==='|'&&c>0)bars.push(c);
+    cols.forEach((c,k)=>{if(groups.length&&bars.some(bc=>bc<c&&bc>(k?cols[k-1]:-1)))barAt.add(groups.length);groups.push({notes:at[c],gap:(k<cols.length-1?cols[k+1]:W)-c,last:k===cols.length-1})})});
+  if(!groups.length)return null;
+  const gaps=groups.filter(g=>!g.last).map(g=>g.gap).sort((a,b)=>a-b);const med=gaps.length?gaps[gaps.length>>1]:2;
+  const ev=[],bars=[0];groups.forEach((g,gi)=>{if(barAt.has(gi))bars.push(ev.length);const d=g.last?1:Math.max(.25,Math.min(2,Math.round(g.gap/med*.5*4)/4));
+    g.notes.sort((x,y)=>x.s-y.s).forEach((n,i,arr)=>{const e=[n.s,n.f,i<arr.length-1?0:d];if(n.tech)e.push(n.tech);ev.push(e)})});
+  return {ev,bars:[...new Set(bars)].filter(b=>b<ev.length)}}
+/* seq with a band backing taken from the linked song's loop */
+function riffSeqAlong(r){const seq=riffSeq({ev:r.ev});const s=SONGS.find(x=>x.id===r.song);const list=s?songLoop(s):(r.backing||[]).map(([root,q])=>({root,q,beats:4}));if(!list.length)return seq;
+  const loopBeats=list.reduce((a,c)=>a+c.beats,0);const beats=Math.max(4,Math.ceil(seq.beats/4)*4);let at=0,i=0;
+  while(at<beats){const c=list[i%list.length],fr=autoVoicing(c.root,c.q);for(let k=0;k<c.beats&&at+k<beats;k++)seq.events.push({at:at+k,strum:{frets:fr,dir:k%2?'u':'d',vel:.3},bk:true});at+=c.beats;i++}
+  seq.beats=beats;return seq}
+function riffTarget(r){return r.to||Math.min(160,(r.bpm||80)+40)}
+function rsGet(id){return (data.rschool||{})[id]||{}}
+function rsSet(id,k,v){const m=Object.assign({},rsGet(id));if(v)m[k]=v;else delete m[k];data.rschool=Object.assign({},data.rschool||{},{[id]:m});Store.save()}
+const RS_STEPS=[['hear','Hear it'],['chunks','Chunks'],['speed','Speed'],['along','Play along'],['memory','Memory'],['yours','Make it yours']];
+function rsDone(r){const m=rsGet(r.id),tb=tempoBest('riff:'+r.id);return {hear:!!m.hear,chunks:!!m.chunks,speed:!!(tb&&tb.bpm>=riffTarget(r)),along:!!m.along,memory:!!m.memory,yours:!!m.yours}}
+function rsMastered(r){const d=rsDone(r);return d.hear&&d.chunks&&d.speed&&d.along&&d.memory}
+function riffChunks(r){const gs=riffGroups(r.ev);let starts=r.bars&&r.bars.length>1?r.bars.map(b=>gs.findIndex(g=>b>=g.a&&b<=g.b)).filter(k=>k>=0):null;
+  if(!starts){starts=[];for(let k=0;k<gs.length;k+=4)starts.push(k)}starts=[...new Set(starts)].sort((a,b)=>a-b);
+  return starts.map((k,i)=>{const e=(i<starts.length-1?starts[i+1]:gs.length)-1;return {a:gs[k].a,b:gs[e].b}})}
+const RSV={step:null,tap:null};
+function rsCardHTML(){const r=curRiff(),d=rsDone(r),m=rsGet(r.id),T=riffTarget(r);if(!RSV.step||RSV._for!==r.id){RSV.step=RS_STEPS.find(([k])=>!d[k])?.[0]||'hear';RSV._for=r.id}
+  const n=RS_STEPS.filter(([k])=>d[k]).length;
+  const bar=`<div class="rsbar">${RS_STEPS.map(([k,nm],i)=>`<button data-rs="${k}" aria-pressed="${RSV.step===k}" class="${d[k]?'dn':''}"><i>${d[k]?'✓':i+1}</i>${nm}</button>`).join('')}</div>`;
+  let body='';const tb=tempoBest('riff:'+r.id);
+  if(RSV.step==='hear')body=`<p>Get the sound in your head before your fingers. Listen at full speed, then slowly, and watch the neck.</p>
+    <div class="row btns"><button class="btn pri" data-rsact="hearfull">Full speed · ${T} bpm</button><button class="btn" data-rsact="hearslow">Slow · ${Math.round(T*.6)} bpm</button></div>
+    ${r.src==='tab'?`<p class="small"><b>Rhythm:</b> the app guessed it from the tab’s spacing. If it doesn’t sound like the record, tap it in: <button class="btn small" data-rsact="tap">Tap the rhythm</button></p>`:''}`;
+  if(RSV.step==='chunks'){const ch=riffChunks(r);body=`<p>Learn it a piece at a time. Loop chunk 1 until it’s clean, then chunk 2, then join them. The trouble-spot looper below takes over.</p>
+    <div class="chips">${ch.map((c,i)=>`<button class="chip" data-rschunk="${c.a}-${c.b}">${i+1}</button>${i?`<button class="chip" data-rschunk="${ch[i-1].a}-${c.b}">${i}+${i+1}</button>`:''}`).join('')}<button class="chip" data-rschunk="0-${r.ev.length-1}">All</button></div>
+    ${m.chunks?'':`<button class="btn small" data-rsact="chunksdone" style="align-self:start">Every chunk is clean</button>`}`}
+  if(RSV.step==='speed')body=`<p>Climb the ladder: three clean runs at a rung, then log it and move up. Full speed is ${T} bpm.</p>
+    <div class="rsladder">${[.6,.7,.8,.9,1].map(p=>{const v=Math.round(T*p);const ok=tb&&tb.bpm>=v;return `<button data-rsbpm="${v}" class="${ok?'dn':''}"><b>${Math.round(p*100)}%</b><span>${v} bpm${ok?' ✓':''}</span></button>`}).join('')}</div>
+    <p class="small muted">Tap a rung to set the tempo, play it with the click below, then tap “I played it clean”.${!inClaude()?' Or use Check me and let the mic judge.':''}</p>`;
+  if(RSV.step==='along'){const s=SONGS.find(x=>x.id===r.song);body=`<p>Play it with a band behind you${s?`: the ${esc(s.title)} chords`:r.backing?': the riff’s own chords':''}. Riffs come alive in time with drums and bass.</p>
+    ${s||r.backing?`<div class="row"><button class="chip" data-rsact="along" aria-pressed="${!!R.along}">Band backing ${R.along?'on':'off'}</button></div>`:`<p class="small muted">No backing for this riff yet. Link it to a song when you import it, or play along with the record.</p>`}
+    ${m.along?'':`<button class="btn small" data-rsact="alongdone" style="align-self:start">I played it along 4 times without stopping</button>`}`}
+  if(RSV.step==='memory')body=`<p>Prove you know it. Hide the tab first, then the neck too, and play along with the click.</p>
+    <div class="row"><button class="chip" data-rsact="hidetab" aria-pressed="${!!R.hideTab}">Hide the tab</button><button class="chip" data-rsact="hideneck" aria-pressed="${!!R.hideNeck}">Hide the neck</button></div>
+    ${m.memory?'':`<button class="btn small" data-rsact="memdone" style="align-self:start">I played it from memory</button>`}`;
+  if(RSV.step==='yours')body=`<p>Turn it into your own vocabulary. Pick one change and play it over the backing:</p>
+    <ul class="tips"><li>Same notes, new rhythm: start it on beat 2 instead of beat 1.</li><li>Change the last note: end on a different red root dot.</li><li>Add one bend, slide or vibrato where there wasn’t one.</li><li>Play it an octave higher or lower.</li></ul>
+    ${m.yours?'':`<button class="btn small" data-rsact="yoursdone" style="align-self:start">I made a version of my own</button>`}`;
+  return `<div class="row" style="justify-content:space-between"><h3 class="sec" style="margin:0">Riff school</h3><span class="small muted">${n} of 6 steps${rsMastered(r)?' · mastered':''}</span></div>${bar}<div class="stack" style="gap:8px">${body}</div>`}
+function rsRefresh(){const c=$('#rs-card');if(c&&!R.rec&&!R.imp)c.innerHTML=rsCardHTML()}
+function rsHear(slow){const r=curRiff(),T=riffTarget(r);Player.stop();const was=R.loop;R.loop=false;playRiff(r,slow?Math.round(T*.6):T,false);R.loop=was;if(!slow)rsSet(r.id,'hear',today());setTimeout(rsRefresh,50)}
+/* tap the rhythm: one tap per note group, at the tempo on the slider */
+function rsTapStart(){const r=curRiff();Player.stop();RSV.tap={t:[],gs:riffGroups(r.ev)};rsTapUI()}
+function rsTapUI(){const r=curRiff(),T=RSV.tap,i=T.t.length,done=i>T.gs.length;const c=$('#rs-card');if(!c)return;
+  if(i<T.gs.length){neckR.active(grpNotes(r.ev,T.gs[i]),i+1<T.gs.length?grpNotes(r.ev,T.gs[i+1]):null);$('#r-tab').innerHTML=tabHTML(r.ev,T.gs[i].a)}
+  c.innerHTML=`<h3 class="sec" style="margin:0">Tap the rhythm</h3><p class="small">Hum the riff, or play the record on another device, and tap the big button once for each note as it should sound. After the last note, tap once more where the next note would start. Tempo for saving: <b>${R.bpm} bpm</b> (set it on the slider below first).</p>
+   <button class="rstap" data-rsact="tapone">${i<T.gs.length?`Tap · note ${i+1} of ${T.gs.length}`:'Tap · end'}</button>
+   <div class="row"><button class="btn small ghost" data-rsact="tapcancel">Cancel</button><button class="btn small ghost" data-rsact="taprestart">Start again</button></div>`}
+function rsTapOne(){const T=RSV.tap;T.t.push(performance.now()/1000);try{audio();const r=curRiff(),g=T.gs[T.t.length-1];if(g)grpNotes(r.ev,g).forEach(([s,f])=>pluck(OPEN[s]+f,AC.currentTime,.7))}catch(e){}
+  if(T.t.length>T.gs.length){const spb=60/R.bpm,r=curRiff();const ev=r.ev.map(e=>e.slice());T.gs.forEach((g,k)=>{const d=Math.max(.25,Math.min(4,Math.round((T.t[k+1]-T.t[k])/spb*4)/4));ev[g.b][2]=d});
+    data.custom=(data.custom||[]).map(x=>x.id===r.id?Object.assign({},x,{ev,bpm:R.bpm}):x);Store.save();RSV.tap=null;toast('Rhythm saved');renderRiffs();return}
+  rsTapUI()}
+/* import screen */
+function renderImport(){const I=R.imp;
+  $('#r-head').innerHTML=`<p class="eyebrow">Add a riff from a tab</p><h2 style="font-size:28px">Paste a tab</h2>
+   <p class="small">Open the riff on Ultimate Guitar (or any tab), select the text version of the tab lines and copy them. Paste below. It stays private to you: saved in your progress, never in the app itself.</p>
+   <div class="ctl"><label class="lab" for="ri-name">Name</label><input type="text" id="ri-name" value="${esc(I.name)}" placeholder="e.g. Johnny B. Goode intro"></div>
+   <div class="grid2"><div class="ctl"><label class="lab" for="ri-song">Song (for the band backing)</label><select id="ri-song"><option value="">None</option>${SONGS.map(s=>`<option value="${s.id}" ${s.id===I.song?'selected':''}>${esc(s.title)}</option>`).join('')}</select></div>
+   <div class="ctl"><label class="lab" for="ri-to">Full speed (bpm)</label><input type="text" inputmode="numeric" id="ri-to" value="${I.to}"></div></div>
+   <div class="ctl"><label class="lab" for="ri-tab">Tab</label><textarea id="ri-tab" rows="8" style="font:500 12px/1.35 var(--fm);white-space:pre;overflow-x:auto" placeholder="e|-------5-8-5-------|&#10;B|-----5-------8-5---|&#10;G|---7-----------7-5-|&#10;D|-7-----------------|&#10;A|-------------------|&#10;E|-------------------|">${esc(I.tab)}</textarea></div>
+   <div class="row"><button class="btn pri" data-riact="read">Read the tab</button><button class="btn ghost" data-riact="cancel">Cancel</button></div>
+   ${I.err?`<p class="fb bad small">${esc(I.err)}</p>`:''}`;
+  if(I.res){$('#r-tab').innerHTML=tabHTML(I.res.ev,-1);neckR.set(riffMarks({ev:I.res.ev}));
+    $('#r-ctl').innerHTML=`<p><b>${riffGroups(I.res.ev).length} notes and chords found</b>, in ${I.res.bars.length} chunk${I.res.bars.length===1?'':'s'}. Check the tab above matches. The rhythm is a guess from the spacing; you can tap it in after saving.</p>
+     <button class="btn pri" data-riact="save" style="align-self:start">Save riff</button>`}else{$('#r-tab').innerHTML='Paste a tab and tap Read the tab.';$('#r-ctl').innerHTML='';neckR.set([])}}
+document.addEventListener('click',e=>{if(TAB!=='riffs')return;
+  const st=e.target.closest('[data-rs]');if(st){RSV.step=st.dataset.rs;rsRefresh();return}
+  const ch=e.target.closest('[data-rschunk]');if(ch){const [a,b]=ch.dataset.rschunk.split('-').map(Number);if(Player.on)Player.stop();SP.a=a;SP.b=b;SP._for=curRiff().id;SP.streak=0;SP.miss=0;SP.bpm=Math.max(40,Math.round(riffTarget(curRiff())*.6/5)*5);spotRefresh();$('#r-tab').innerHTML=tabHTML(curRiff().ev,-1,null,[a,b]);const c=$('#sp-card');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});return}
+  const bp=e.target.closest('[data-rsbpm]');if(bp){R.bpm=+bp.dataset.rsbpm;R.trainer=false;if(Player.on&&Player.owner==='riff')Player.setBpm(R.bpm);const s=$('#r-bpm');if(s)s.value=R.bpm;const o=$('#r-bpmout');if(o)o.textContent=R.bpm+' bpm';$$('[data-tg="trainer"]').forEach(x=>x.setAttribute('aria-pressed','false'));toast('Tempo set to '+R.bpm+' bpm');return}
+  const a=e.target.closest('[data-rsact]');if(a){const k=a.dataset.rsact,r=curRiff();
+    if(k==='hearfull')rsHear(false);if(k==='hearslow')rsHear(true);
+    if(k==='chunksdone'){rsSet(r.id,'chunks',today());rsRefresh()}if(k==='alongdone'){rsSet(r.id,'along',today());rsRefresh()}if(k==='memdone'){rsSet(r.id,'memory',today());R.hideTab=R.hideNeck=false;renderRiffs()}if(k==='yoursdone'){rsSet(r.id,'yours',today());rsRefresh()}
+    if(k==='along'){R.along=!R.along;if(Player.on&&Player.owner==='riff')playRiff(r,R.bpm,R.trainer);rsRefresh()}
+    if(k==='hidetab'){R.hideTab=!R.hideTab;renderRiffs()}if(k==='hideneck'){R.hideNeck=!R.hideNeck;renderRiffs()}
+    if(k==='tap')rsTapStart();if(k==='tapone')rsTapOne();if(k==='taprestart')rsTapStart();if(k==='tapcancel'){RSV.tap=null;renderRiffs()}
+    if(rsMastered(r)&&!(data.rmastered||{})[r.id]){data.rmastered=Object.assign({},data.rmastered||{},{[r.id]:today()});Store.save();celebrate({size:'big',kicker:'Riff mastered',title:r.name,sub:'All five steps done: heard, chunked, at full speed, with the band and from memory.',icon:'♪'})}
+    return}
+  const ri=e.target.closest('[data-riact]');if(ri){const k=ri.dataset.riact,I=R.imp;I.name=$('#ri-name').value;I.tab=$('#ri-tab').value;I.song=$('#ri-song').value;I.to=Math.max(40,Math.min(240,+$('#ri-to').value||120));
+    if(k==='cancel'){R.imp=null;renderRiffs();return}
+    if(k==='read'){const res=parseTab(I.tab);I.res=res;I.err=res?'':'No tab lines found. Paste the six string lines (e, B, G, D, A, E), each starting with the string name and a | character.';renderImport();return}
+    if(k==='save'&&I.res){const nm=(I.name||'').trim()||'My riff '+((data.custom||[]).length+1);const r={id:'t'+Date.now().toString(36),name:nm.slice(0,60),sub:I.song?'From your tab · '+(SONGS.find(s=>s.id===I.song)||{}).title:'From your tab',src:'tab',bpm:Math.round(I.to*.6),to:I.to,ev:I.res.ev,bars:I.res.bars,song:I.song||undefined};
+      data.custom=(data.custom||[]).concat([r]).slice(-60);Store.save();R.imp=null;R.id=r.id;RSV.step='hear';toast('Riff saved. Start with Hear it.');renderRiffs()}}});
+
 /* ================= REWARDS: celebrations, badges, competence score ================= */
 const REDUCED=(()=>{try{return matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){return false}})();
 const CEL={q:[],on:false,t:0,raf:0};
@@ -2830,6 +2980,7 @@ const BFAM=[
  {id:'speed',name:'Up to speed',icon:'♪',unit:'riffs at full target tempo',v:riffsAtSpeed,t:[1,3,5]},
  {id:'triads',name:'Triad finder',icon:'△',unit:'out of 10, Name the triad',v:()=>bestOk('triad',10),t:[6,8,10]},
  {id:'improv',name:'Improviser',icon:'♫',unit:'improvising lessons done',v:()=>Object.keys(data.impro||{}).length,t:[1,4,9]},
+ {id:'riffm',name:'Riff master',icon:'♪',unit:'riffs mastered in Riff school',v:()=>Object.keys(data.rmastered||{}).length,t:[1,3,10]},
  {id:'ears',name:'Good ears',icon:'E',unit:'out of 10, Major or minor',v:()=>bestOk('ear-mm',10),t:[7,9,10]},
  {id:'ints',name:'Interval hunter',icon:'I',unit:'out of 10, Intervals',v:()=>bestOk('ear-int',10),t:[6,8,10]},
  {id:'echo',name:'Echo',icon:'R',unit:'notes in Call and response',v:callLevel,t:[3,4,5,6]},
@@ -2960,7 +3111,7 @@ function mergeData(o){if(!o||typeof o!=='object')throw new Error('bad');let adde
     if(e.note&&e.note!==m.note&&!(m.note||'').includes(e.note)){m.note=m.note?m.note+' / '+e.note:e.note;added++}});
   const obj=(k,pick)=>{const a=Object.assign({},data[k]||{});Object.entries(o[k]||{}).forEach(([kk,v])=>{if(!(kk in a)){a[kk]=v;added++}else{const w=pick?pick(a[kk],v):a[kk];if(K(w)!==K(a[kk])){a[kk]=w;added++}}});data[k]=a};
   obj('loopDone',(x,y)=>x<y?x:y);obj('rep',(x,y)=>(y.d||'')>(x.d||'')?y:x);obj('spots',(x,y)=>y.bpm>x.bpm?y:x);obj('self');obj('chal');obj('weekHits');obj('critHits');
-  obj('badges',(x,y)=>x<y?x:y);obj('jstages',(x,y)=>x<y?x:y);obj('impro',(x,y)=>x<y?x:y);obj('jmanual',(x,y)=>x<y?x:y);obj('comp');obj('nstats',(x,y)=>y[0]>x[0]?y:x);obj('songEdits');
+  obj('badges',(x,y)=>x<y?x:y);obj('jstages',(x,y)=>x<y?x:y);obj('impro',(x,y)=>x<y?x:y);obj('rmastered',(x,y)=>x<y?x:y);obj('rschool',(x,y)=>Object.assign({},y,x));obj('jmanual',(x,y)=>x<y?x:y);obj('comp');obj('nstats',(x,y)=>y[0]>x[0]?y:x);obj('songEdits');
   {const ea=data.ear||{},eb=o.ear||{};const seen=new Set((ea.call||[]).map(K));const add=(eb.call||[]).filter(x=>!seen.has(K(x)));
     data.ear=Object.assign({},ea,{call:(ea.call||[]).concat(add).slice(-200),callLevel:Math.max(ea.callLevel||2,eb.callLevel||2)});added+=add.length}
   if((o.level||1)>data.level){data.level=o.level;data.levelStart=o.levelStart;added++}
@@ -3019,6 +3170,7 @@ function buildReport(){
   lines.push('','SONG BOARD');SONGS.forEach(sg=>lines.push(`${sg.title}: ${STAGES[repStage(sg.id)]}`));
   {const c=compNow();lines.push('','COMPETENCE SCORE',`${c.total}/100 (`+AREAS.map(a=>`${a.name} ${c.a[a.id]}`).join(', ')+')');const h=data.comp||{},ks=Object.keys(h).sort();if(ks.length)lines.push('History: '+ks.slice(-14).map(k=>`${k.slice(5)} ${h[k][0]}`).join(', '))}
   {const st=jAll(),n=jCount(st),ci=jChapter(n);lines.push('','JOURNEY',`Chapter ${ci+1} of 7: ${CHAPTERS[ci].name}. ${n} of ${JSTAGES.length} stages. Phase: ${PHASE_NAME[jPhase(st)]}.`);JTRACKS.forEach(t=>lines.push(`${t.name}: `+t.stages.map((s,i)=>`${st[s.id].met?'[x]':'[ ]'} ${i+1}. ${s.name}${!st[s.id].met&&st[s.id].now?' ('+st[s.id].now+')':''}`).join('; ')))}
+  lines.push('','RIFF SCHOOL: '+allRiffs().filter(r=>Object.keys(rsGet(r.id)).length||tempoBest('riff:'+r.id)).map(r=>{const d=rsDone(r);return `${r.name}: ${RS_STEPS.filter(([k])=>d[k]).map(([,n])=>n).join(', ')||'started'}`}).join('; ')||'Not started.');
   lines.push('','IMPROVISING LESSONS: '+IMPRO.map((l,i)=>`${imDone(l.id)?'[x]':'[ ]'} ${i+1}. ${l.title}`).join('; '));
   lines.push('','BADGES ('+Object.keys(data.badges||{}).length+' of '+badgeTotal()+')');BFAM.forEach(f=>{const k=famEarned(f);if(k>=0)lines.push(`${f.name}: ${TIERS[k].n}`)});
   {const ck=(data.checks||[]).slice(-10).reverse();lines.push('','MIC RIFF CHECKS (newest first)');if(!ck.length)lines.push('None yet.');ck.forEach(c=>lines.push(`${c.d} | ${tempoLabel(c.i)} at ${c.bpm} bpm | ${c.hit}/${c.n} notes | timing ${c.med} ms (+ late), spread ${c.spr} ms`))}

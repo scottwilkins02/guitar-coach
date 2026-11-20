@@ -613,8 +613,10 @@ function boxNotes(root,iv5,n){
 }
 
 /* ================= audio ================= */
-let AC=null,MASTER=null,TONEF=null;const BUF={};
+let AC=null,MASTER=null,TONEF=null,AUDIO_STALE=false;const BUF={};
 function audio(){
+  /* iOS can leave sound on the quiet earpiece route after the mic has been used, so start a fresh audio engine for the next playback */
+  if(AC&&AUDIO_STALE&&!MIC.on&&!(typeof Player!=='undefined'&&Player.on)){try{AC.close()}catch(e){}AC=null;MASTER=null;TONEF=null;for(const k in BUF)delete BUF[k];audio._primed=false;AUDIO_STALE=false}
   if(!AC){
     AC=new (window.AudioContext||window.webkitAudioContext)();
     const comp=AC.createDynamicsCompressor();comp.connect(AC.destination);
@@ -2386,7 +2388,7 @@ async function micStart(){
   const src=AC.createMediaStreamSource(MIC.stream);MIC.an=AC.createAnalyser();MIC.an.fftSize=2048;src.connect(MIC.an);MIC.src=src;
   MIC.buf=new Float32Array(2048);MIC.on=true;MIC.err='';MIC.env=0;MIC.pend=null;MIC.held=null;
   const loop=()=>{if(!MIC.on)return;micFrame();MIC.raf=requestAnimationFrame(loop)};MIC.raf=requestAnimationFrame(loop);return true}
-function micStop(){MIC.on=false;cancelAnimationFrame(MIC.raf);try{MIC.src&&MIC.src.disconnect()}catch(e){}try{MIC.stream&&MIC.stream.getTracks().forEach(t=>t.stop())}catch(e){}MIC.stream=null;MIC.frameSubs.clear();MIC.noteSubs.clear();MIC.onsetSubs.clear()}
+function micStop(){if(MIC.stream)AUDIO_STALE=true;MIC.on=false;cancelAnimationFrame(MIC.raf);try{MIC.src&&MIC.src.disconnect()}catch(e){}try{MIC.stream&&MIC.stream.getTracks().forEach(t=>t.stop())}catch(e){}MIC.stream=null;MIC.frameSubs.clear();MIC.noteSubs.clear();MIC.onsetSubs.clear()}
 function micErrText(){const e=MIC.err;
   if((e==='NotAllowedError'||e==='SecurityError')&&MIC_URL&&inClaude())return 'The microphone can’t work inside Claude. Use the mic edition instead: Progress tab, Main Coach and mic edition, Open the mic edition.';
   if(e==='NotAllowedError'||e==='SecurityError')return 'The microphone was blocked. If you were asked, choose Allow. On iPhone, also check Settings > Apps > Safari (or the Claude app) > Microphone. If the Claude app never asks, open the Coach in Safari instead.';
@@ -3082,7 +3084,7 @@ function rwMicOK(){return !inClaude()&&!!(navigator.mediaDevices&&navigator.medi
 function rwNoteName(n){return RW_STR[n.s]+n.f+(/^b/.test(n.tech)?' bend':'')}
 
 function rwOpen(id){const r=allRiffs().find(x=>x.id===id)||curRiff();Player.stop();
-  RW.r=r;RW.base=null;RW.drill=null;RW.lp=null;RW.la=0;RW.lb=null;RW.spots=[];RW.fixed='';RW.open=true;rwPrep(r);const m=rwGet(r.id),tgt=riffTarget(r);
+  RW.r=r;RW.base=null;RW.drill=null;RW.lp=null;RW.guide=true;RW.la=0;RW.lb=null;RW.spots=[];RW.fixed='';RW.open=true;rwPrep(r);const m=rwGet(r.id),tgt=riffTarget(r);
   RW.li=typeof m.lvl==='number'?m.lvl:0;rwApplyLevel();
   RW.bpm=m.bpm||Math.max(40,Math.round(tgt*.6));if(!rwMicOK())RW.mode='watch';
   RW.band=RW.band&&rwHasBand(r);RW.sum=null;RW.pass=[];RW.jd={};RW.fx=[];RW.pts=0;RW.streak=0;RW.msg='';RW.curG=-2;
@@ -3255,7 +3257,7 @@ function rwNeckSync(B){if(!RW.run||!RW.neck)return;const L=RW.L;const rel=((B%L)
   const key=p+':'+gi;if(key===RW.curG)return;RW.curG=key;const g=gs[gi],nx=gs[(gi+1)%gs.length];if(!g)return;
   RW.neck.active(g.idx.map(k=>[RW.ns[k].s,RW.ns[k].f]),nx.idx.map(k=>[RW.ns[k].s,RW.ns[k].f]))}
 
-async function rwStart(){if(RW.run)return;const r=RW.r;RW.sum=null;RW.pass=[];RW.jd={};RW.fx=[];RW.pts=0;RW.streak=0;RW.segs=[];RW.pg=[];RW.lastPass=-1;RW.bw=null;RW.curG=-2;RW.extra=0;RW.fixed='';
+async function rwStart(){if(RW.run)return;sessionOn();const r=RW.r;RW.sum=null;RW.pass=[];RW.jd={};RW.fx=[];RW.pts=0;RW.streak=0;RW.segs=[];RW.pg=[];RW.lastPass=-1;RW.bw=null;RW.curG=-2;RW.extra=0;RW.fixed='';
   audio();
   if(RW.mode!=='watch'){RW.msg='Starting the microphone…';rwCtl();
     if(!await micStart()){RW.msg=micErrText();RW.mode='watch';rwCtl();return}
@@ -3379,7 +3381,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwS
   document.body.appendChild(h)})();
 
 /* ================= UPDATES: the home-screen copy picks up each new GitHub deploy ================= */
-const BUILD='20261120081650';
+const BUILD='20261120082552';
 const UPD={last:0,shown:false};
 function updBusy(){return (typeof RW!=='undefined'&&RW.run)||(typeof Player!=='undefined'&&Player.on)||(typeof MIC!=='undefined'&&MIC.on)}
 function updGo(v){try{const a=JSON.parse(localStorage.getItem('coach-upd')||'{}');localStorage.setItem('coach-upd',JSON.stringify({v,n:a.v===v?(a.n||0)+1:1}))}catch(e){}

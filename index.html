@@ -59,6 +59,8 @@ header.top .in{max-width:980px;margin:0 auto;padding:10px 16px;display:flex;alig
 .brand b{font:800 26px/1 var(--fd);letter-spacing:.03em;text-transform:uppercase}
 .brand span{font:500 11px/1 var(--fm);color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
 .sync{cursor:pointer;font:500 11px/1.2 var(--fm);color:var(--muted);display:flex;align-items:center;gap:6px;text-align:right}
+.topr{display:flex;flex-direction:column;align-items:flex-end;gap:4px;min-width:0}
+.ver{font:500 10px/1.2 var(--fm);color:var(--muted);letter-spacing:.04em;opacity:.85;text-align:right;white-space:nowrap}
 .sync i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--muted)}
 .sync.ok i{background:var(--ok)} .sync.busy i{background:var(--accent)}
 .wrap{max-width:980px;margin:0 auto;padding-inline:16px;padding-block:14px 120px}
@@ -397,7 +399,7 @@ body.rw-on{overflow:hidden}
 
 <header class="top"><div class="in">
   <div class="brand"><b>Guitar Coach</b><span>LOTSW</span></div>
-  <div id="sync" class="sync"><i></i><span>Loading</span></div>
+  <div class="topr"><div id="sync" class="sync"><i></i><span>Loading</span></div><div id="ver" class="ver"></div></div>
 </div></header>
 
 <main class="wrap">
@@ -3336,7 +3338,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwS
   document.body.appendChild(h)})();
 
 /* ================= UPDATES: the home-screen copy picks up each new GitHub deploy ================= */
-const BUILD='20261120075706';
+const BUILD='20261120080317';
 const UPD={last:0,shown:false};
 function updBusy(){return (typeof RW!=='undefined'&&RW.run)||(typeof Player!=='undefined'&&Player.on)||(typeof MIC!=='undefined'&&MIC.on)}
 function updGo(v){try{const a=JSON.parse(localStorage.getItem('coach-upd')||'{}');localStorage.setItem('coach-upd',JSON.stringify({v,n:a.v===v?(a.n||0)+1:1}))}catch(e){}
@@ -3351,7 +3353,11 @@ async function updCheck(force){if(location.protocol!=='https:'||(typeof inClaude
     let a={};try{a=JSON.parse(localStorage.getItem('coach-upd')||'{}')}catch(e){}
     // reload by itself when you're not mid-exercise, but never more than twice for the same version
     if(!updBusy()&&document.visibilityState==='visible'&&!(a.v===j.build&&a.n>=2))updGo(j.build);else updBanner(j.build)}catch(e){}}
-(function(){if(/[?&]v=/.test(location.search)){history.replaceState(null,'',location.pathname);setTimeout(()=>toast('Updated to the latest version'),900)}
+function verLabel(b){const m=/^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)/.exec(b||'');if(!m)return 'Version '+(b||'?');
+  const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4],+m[5]));
+  return 'v '+d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})+' '+d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}
+(function(){const v=document.getElementById('ver');if(v){v.textContent=verLabel(BUILD);v.title='Build '+BUILD}
+  if(/[?&]v=/.test(location.search)){history.replaceState(null,'',location.pathname);setTimeout(()=>toast('Updated to the latest version'),900)}
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')updCheck()});
   window.addEventListener('pageshow',()=>updCheck());window.addEventListener('focus',()=>updCheck());setTimeout(()=>updCheck(true),1200)})();
 /* ================= REWARDS: celebrations, badges, competence score ================= */

@@ -21,6 +21,13 @@ body{overscroll-behavior-y:none}
 #splash span{font:500 12px/1 ui-monospace,Menlo,monospace;letter-spacing:.14em;text-transform:uppercase;color:#e49a42}
 .upd{position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:40;display:flex;align-items:center;gap:12px;justify-content:space-between;
  padding:12px 14px;border-radius:12px;background:var(--ink,#1b1b1b);color:var(--bg,#fff);box-shadow:0 6px 24px rgba(0,0,0,.25);font-size:14px;font-weight:600}
+.rw-bpmin{width:76px;min-height:44px;font:700 18px var(--fm);text-align:center;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:inherit;padding:4px 6px}
+.rw-bpmr{width:100%;height:36px;accent-color:#d98a1c;margin:0}
+.rw-loop{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel)}
+.rw-loop summary{font-weight:700;cursor:pointer;min-height:32px;display:flex;align-items:center}
+.rw-loop[open]{display:flex;flex-direction:column;gap:10px}
+.rw-lsel{display:grid;grid-template-columns:auto 1fr;gap:8px 10px;align-items:center}
+.rw-lsel select{min-height:44px;font-size:16px;min-width:0;width:100%}
 </style>
 </head><body>
 <div id="splash" aria-hidden="true"><div><img src="icon-512.png" alt=""><b>Guitar Coach</b><span>Mic edition</span></div></div>
@@ -3067,7 +3074,7 @@ function rwFull(){return RW.li>=RW.lvls.length-1}
 function rwPG(p){return RW.pg[p]||{gs:RW.gs,show:RW.show,li:RW.li}}
 
 function rwGet(id){return (data.rway||{})[id]||{}}
-function rwSet(id,o){if(RW.drill)return;data.rway=Object.assign({},data.rway||{},{[id]:Object.assign({},rwGet(id),o)});Store.save()}
+function rwSet(id,o){if(RW.drill||RW.lp)return;data.rway=Object.assign({},data.rway||{},{[id]:Object.assign({},rwGet(id),o)});Store.save()}
 function rwStars(p){return p>=.92?3:p>=.8?2:p>=.6?1:0}
 function rwStarStr(n){return '★'.repeat(n)+'☆'.repeat(3-n)}
 function rwHasBand(r){return !!((r.song&&SONGS.find(x=>x.id===r.song))||r.backing)}
@@ -3075,17 +3082,17 @@ function rwMicOK(){return !inClaude()&&!!(navigator.mediaDevices&&navigator.medi
 function rwNoteName(n){return RW_STR[n.s]+n.f+(/^b/.test(n.tech)?' bend':'')}
 
 function rwOpen(id){const r=allRiffs().find(x=>x.id===id)||curRiff();Player.stop();
-  RW.r=r;RW.base=null;RW.drill=null;RW.spots=[];RW.fixed='';RW.open=true;rwPrep(r);const m=rwGet(r.id),tgt=riffTarget(r);
+  RW.r=r;RW.base=null;RW.drill=null;RW.lp=null;RW.la=0;RW.lb=null;RW.spots=[];RW.fixed='';RW.open=true;rwPrep(r);const m=rwGet(r.id),tgt=riffTarget(r);
   RW.li=typeof m.lvl==='number'?m.lvl:0;rwApplyLevel();
   RW.bpm=m.bpm||Math.max(40,Math.round(tgt*.6));if(!rwMicOK())RW.mode='watch';
   RW.band=RW.band&&rwHasBand(r);RW.sum=null;RW.pass=[];RW.jd={};RW.fx=[];RW.pts=0;RW.streak=0;RW.msg='';RW.curG=-2;
   const el=$('#rw');el.hidden=false;document.body.classList.add('rw-on');
   if(!RW.neck)RW.neck=new Neck($('#rw-neck'),{frets:17});
   rwTitle();rwNeckMarks();rwSize();rwCtl();rwScore();cancelAnimationFrame(RW.raf);RW.raf=requestAnimationFrame(rwFrame);$('#rw').scrollTop=0}
-function rwTitle(){$('#rw-title').innerHTML=`<span class="eyebrow">${RW.drill?'Fix-it drill':'Runway'}</span><b>${esc(RW.drill?(RW.base.name+' · spot '+(RW.drill.i+1)):RW.r.name)}</b>`}
+function rwTitle(){$('#rw-title').innerHTML=`<span class="eyebrow">${RW.drill?'Fix-it drill':RW.lp?'Looping a part':'Runway'}</span><b>${esc(RW.drill?(RW.base.name+' · spot '+(RW.drill.i+1)):RW.lp?(RW.base.name+' · '+RW.lp.label):RW.r.name)}</b>`}
 function rwNeckMarks(){const r=RW.r;RW.neck.set(r.ev.map(([s,f],i)=>({s,f,label:RW.ns[i].fin||'○',cls:'fin'+RW.ns[i].fin})).filter((m,i,a)=>a.findIndex(x=>x.s===m.s&&x.f===m.f)===i));
   const fr=r.ev.map(e=>e[1]).filter(f=>f>0);RW.neck.scrollTo(fr.length?(Math.min(...fr)+Math.max(...fr))/2:0)}
-function rwClose(){rwStop(true);if(RW.drill)rwEndDrill(false);RW.open=false;$('#rw').hidden=true;document.body.classList.remove('rw-on');if(TAB==='riffs')renderRiffs()}
+function rwClose(){rwStop(true);if(RW.drill)rwEndDrill(false);if(RW.lp)rwEndLoop();RW.open=false;$('#rw').hidden=true;document.body.classList.remove('rw-on');if(TAB==='riffs')renderRiffs()}
 function rwSize(){const c=$('#rw-c');if(!c)return;const w=c.parentElement.clientWidth||360,dpr=Math.min(3,window.devicePixelRatio||1);
   c.style.width=w+'px';c.style.height=RW_H+'px';c.width=Math.round(w*dpr);c.height=Math.round(RW_H*dpr);RW.W=w;RW.cv=c.getContext('2d');RW.cv.setTransform(dpr,0,0,dpr,0,0)}
 
@@ -3182,6 +3189,7 @@ function rwPassDone(p){RW.lastPass=p;const P=rwPG(p),n=P.gs.length;let sc=0,c={p
   const rec={p,pct,stars,bpm,c,med:Math.round(med),spr:Math.round(spr),out,fails,gs:P.gs,li:P.li,full,mode:RW.mode,extra:RW.extra};RW.extra=0;
   RW.pass.push(rec);
   // fix-it drill: three clean runs in a row and the spot is fixed
+  if(RW.lp){rwCtl();return}
   if(RW.drill){const d=RW.drill;const clean=!fails.some(Boolean);d.clean=clean?d.clean+1:0;rwFx(clean?`Clean ${d.clean} of 3`:'Again',clean?'#7CFC9A':'#f2c531',5);
     if(d.clean>=3){rwFx('Fixed!','#7CFC9A',5);setTimeout(()=>{rwStop(true);rwEndDrill(true)},700)}rwCtl();return}
   const m=rwGet(RW.r.id),r=RW.r,tgt=riffTarget(r);
@@ -3208,6 +3216,21 @@ function rwFindSpots(){const ps=RW.pass.filter(x=>x.mode==='score'&&x.li===RW.li
   order.forEach(o=>{const a=Math.max(0,o.gi-1),b=Math.min(gs.length-1,o.gi+1);const s=spots.find(x=>!(b<x.a||a>x.b));
     if(s){s.a=Math.min(s.a,a);s.b=Math.max(s.b,b);s.c+=o.c;s.hit.push(o.gi)}else if(spots.length<3)spots.push({a,b,c:o.c,hit:[o.gi],runs:ps.length})});
   spots.forEach(s=>{s.gs=gs;s.label=s.hit.sort((x,y)=>x-y).map(gi=>gs[gi].idx.map(k=>rwNoteName(RW.ns[k])).join(' + ')).join(', ')});return spots}
+function rwSaveBpm(){const id=(RW.base||RW.r).id;data.rway=Object.assign({},data.rway||{},{[id]:Object.assign({},rwGet(id),{bpm:RW.bpm})});Store.save()}
+function rwSetBpm(v){v=Math.round(+v);if(!isFinite(v))return;RW.bpm=Math.max(30,Math.min(240,v));if(!RW.drill)rwSaveBpm();if(RW.run&&RW.mode!=='wait')Player.setBpm(RW.bpm)}
+/* ---------- loop a part: pick a start and end note and the runway repeats just that ---------- */
+function rwGLabel(g,k){const b=Math.floor(g.at/4)+1,bt=Math.round((g.at%4+1)*100)/100;return `${k+1}. ${g.idx.map(i=>rwNoteName(RW.ns[i])).join(' + ')} · bar ${b}, beat ${bt}`}
+function rwSub(gs){const base=RW.r;const idx=[];gs.forEach(g=>g.idx.forEach(k=>idx.push(k)));const keep=new Set(idx);
+  const ev=idx.map(k=>{const e=base.ev[k],g=gs.find(x=>x.idx.includes(k)),gi=gs.indexOf(g);const lastInG=k===g.idx[g.idx.length-1];
+    let d=0;if(lastInG)d=gi<gs.length-1?gs[gi+1].at-g.at:Math.max(1,g.gap);
+    const n=RW.ns[k];const tech=(n.tech==='/'||n.tech==='h'||n.tech==='p')&&!(n.prevI!=null&&keep.has(n.prevI))?'':n.tech;const o=[e[0],e[1],d];if(tech)o.push(tech);return o});
+  return {ev,fins:idx.map(k=>RW.ns[k].fin)}}
+function rwStartLoop(){if(RW.drill||RW.lp)return;const n=RW.gs.length;let a=Math.max(0,Math.min(n-1,RW.la|0)),b=Math.max(0,Math.min(n-1,RW.lb==null?n-1:RW.lb|0));if(b<a){const t=a;a=b;b=t}
+  const was=RW.run;rwStop(true);const gs=RW.gs.slice(a,b+1),base=RW.r;const sub=rwSub(gs);
+  RW.lp={a,b,base,li:RW.li,label:a===b?`note ${a+1}`:`notes ${a+1} to ${b+1}`};RW.base=base;RW.r=Object.assign({},base,{ev:sub.ev});rwPrep(RW.r,sub.fins);
+  RW.lvls=[{k:2,name:RW_LV[2],set:RW.gsAll}];RW.li=0;rwApplyLevel();RW.sum=null;RW.pass=[];RW.jd={};RW.curG=-2;rwTitle();rwNeckMarks();rwCtl();rwScore();if(was)rwStart()}
+function rwEndLoop(){const l=RW.lp;if(!l)return;const was=RW.run;rwStop(true);RW.lp=null;RW.r=l.base;RW.base=null;rwPrep(RW.r);RW.li=l.li;rwApplyLevel();
+  RW.pass=[];RW.sum=null;RW.jd={};RW.curG=-2;rwTitle();rwNeckMarks();rwCtl();rwScore();if(was)rwStart()}
 function rwStartDrill(i){const s=RW.spots[i];if(!s)return;rwStop(true);const base=RW.r,gs=s.gs.slice(s.a,s.b+1);
   const idx=[];gs.forEach(g=>g.idx.forEach(k=>idx.push(k)));const keep=new Set(idx);
   const ev=idx.map((k,j)=>{const e=base.ev[k],g=gs.find(x=>x.idx.includes(k)),gi=gs.indexOf(g);const lastInG=k===g.idx[g.idx.length-1];
@@ -3239,7 +3262,7 @@ async function rwStart(){if(RW.run)return;const r=RW.r;RW.sum=null;RW.pass=[];RW
     MIC.noteSubs.add(rwMicNote);MIC.frameSubs.add(rwMicFrame);MIC.onsetSubs.add(rwOnset)}
   RW.msg='';
   if(RW.mode==='wait'){RW.L=Math.max(1,Math.ceil(RW.total-1e-6));RW.w={B:-2,last:performance.now(),gi:0,pass:0,tries:0,played:false};RW.run=true;sessionOn();rwCtl();return}
-  const seq=RW.band&&rwHasBand(r)&&!RW.drill?riffSeqAlong(r):riffSeq({ev:r.ev});
+  const seq=RW.band&&rwHasBand(r)&&!RW.drill&&!RW.lp?riffSeqAlong(r):riffSeq({ev:r.ev});
   if(RW.mode!=='watch'||!RW.guide)seq.events.forEach(e=>{if(!e.bk)e.notes=null});
   RW.L=seq.beats;RW.run=true;
   Player.start(seq,{bpm:RW.bpm,loop:true,click:true,owner:'rway',onStop:()=>{if(RW.run)rwStop()}});
@@ -3249,7 +3272,7 @@ function rwStop(silent){const was=RW.run;RW.run=false;if(Player.on&&Player.owner
   if(RW.w){sessionOff();RW.w=null}
   RW.neck&&RW.neck.active([],[]);RW.curG=-2;
   if(was&&!silent&&RW.pass.length){const best=RW.pass.slice().sort((a,b)=>b.pct-a.pct||b.bpm-a.bpm)[0];RW.sum=best;
-    if(RW.mode==='score'&&!RW.drill){RW.spots=rwFindSpots();
+    if(RW.mode==='score'&&!RW.drill&&!RW.lp){RW.spots=rwFindSpots();
       if(best.full){const ok=best.c.perfect+best.c.good+best.c.bend;data.checks=(data.checks||[]).concat([{d:today(),i:'riff:'+RW.r.id,bpm:best.bpm,hit:ok,n:best.gs.length,med:best.med||0,spr:best.spr||0}]).slice(-300);Store.save()}}}
   if(!silent)rwCtl();if(CEL.q.length&&!CEL.on)setTimeout(()=>{if(!RW.run&&!CEL.on)celNext()},400)}
 
@@ -3270,7 +3293,7 @@ function rwWaitNext(st){const w=RW.w;const g=RW.gs[w.gi];RW.jd[w.pass+':'+w.gi]=
   rwScore()}
 
 /* ---------- controls ---------- */
-function rwCtl(){const el=$('#rw-ctl');if(!el||!RW.r)return;const r=RW.r,tgt=riffTarget(r),m=rwGet(r.id),mic=rwMicOK(),band=rwHasBand(r)&&!RW.drill;
+function rwCtl(){const el=$('#rw-ctl');if(!el||!RW.r)return;const r=RW.r,tgt=riffTarget(r),m=rwGet(r.id),mic=rwMicOK(),band=rwHasBand(r)&&!RW.drill&&!RW.lp;
   const modes=[['score','Score'],['rhythm','Rhythm'],['wait','Wait'],['watch','Watch']];
   const info={score:'Play along with the click. The mic scores every note: Perfect is within 60 ms. The app doesn’t play the riff in this mode, so it only hears you.',
     rhythm:'Rhythm first. Rest your fretting hand lightly across the strings so they’re muted, and pick the riff’s rhythm on the strings shown. The mic only checks your timing. Get 3 stars here, then add the notes in Score.',
@@ -3291,13 +3314,21 @@ function rwCtl(){const el=$('#rw-ctl');if(!el||!RW.r)return;const r=RW.r,tgt=rif
    <button class="btn pri rw-big" data-rw="${RW.run?'stop':'start'}">${RW.run?'Stop':'Start'}</button>
    ${last&&!d?`<div class="rw-pass"><b>${last.wait?'Run':'Pass'} ${RW.pass.length}</b> <span class="stars">${rwStarStr(last.stars)}</span> ${Math.round(last.pct*100)}% <span class="muted small">at ${last.bpm} bpm${last.full||last.mode==='wait'?'':' · '+RW_LV[RW.lvls[last.li]?RW.lvls[last.li].k:2]}${last.wait?'':last.mode==='rhythm'?` · ${last.c.perfect} perfect, ${last.c.good} good, ${last.c.miss} missed${last.extra?`, ${last.extra} extra hits`:''}`:` · ${last.c.perfect} perfect, ${last.c.good} good${last.c.bend?`, ${last.c.bend} bend flat`:''}, ${last.c.miss+last.c.wrong} missed`}</span></div>`:''}
    ${RW.sum&&!RW.run&&!d?rwSumHTML():''}
-   <div class="rw-speed"><span class="lab">Speed</span><button class="btn small" data-rw="slower" aria-label="Slower">−</button><b>${RW.bpm} bpm</b><button class="btn small" data-rw="faster" aria-label="Faster">+</button><span class="small muted">target ${tgt}</span></div>
+   <div class="rw-speed"><label class="lab" for="rw-bpm">Speed</label><button class="btn small" data-rw="slower" aria-label="Slower">−</button><input id="rw-bpm" class="rw-bpmin" type="number" inputmode="numeric" min="30" max="240" value="${RW.bpm}" aria-label="Tempo in bpm"><span class="small">bpm</span><button class="btn small" data-rw="faster" aria-label="Faster">+</button><span class="small muted">target ${tgt}</span></div>
+   <input id="rw-bpmr" class="rw-bpmr" type="range" min="30" max="${Math.max(200,tgt+20)}" step="1" value="${RW.bpm}" aria-label="Tempo slider">
+   ${RW.drill?'':RW.lp?`<div class="rw-drill"><p class="eyebrow" style="margin:0">Looping a part</p><p style="margin:4px 0"><b>${esc(RW.lp.label)}</b> of ${esc(RW.base.name)} repeats until you stop.</p>
+     <button class="btn small ghost" data-rw="loopend">Back to the full riff</button></div>`
+   :`<details class="rw-loop" ${RW.loopOpen?'open':''}><summary>Loop a part of the riff</summary>
+     <div class="rw-lsel"><label class="lab" for="rw-la">From</label><select id="rw-la">${RW.gs.map((g,k)=>`<option value="${k}" ${k===(RW.la|0)?'selected':''}>${esc(rwGLabel(g,k))}</option>`).join('')}</select>
+     <label class="lab" for="rw-lb">To</label><select id="rw-lb">${RW.gs.map((g,k)=>`<option value="${k}" ${k===(RW.lb==null?RW.gs.length-1:RW.lb)?'selected':''}>${esc(rwGLabel(g,k))}</option>`).join('')}</select></div>
+     <button class="btn small pri" data-rw="loopgo">Loop this part</button>
+     <p class="small muted" style="margin:0">Notes are numbered in the order they reach the line. Pick the first and last note of the part you want, and it repeats on its own with the same mode and speed.</p></details>`}
    ${d?'':`<div class="chips">
-    ${RW.mode==='score'?`<button class="chip" data-rw="ladder" aria-pressed="${RW.ladder}">Level up after 3 stars: ${RW.ladder?'on':'off'}</button>`:''}
+    ${RW.mode==='score'&&!RW.lp?`<button class="chip" data-rw="ladder" aria-pressed="${RW.ladder}">Level up after 3 stars: ${RW.ladder?'on':'off'}</button>`:''}
     ${band&&RW.mode!=='wait'?`<button class="chip" data-rw="band" aria-pressed="${RW.band}">Band backing: ${RW.band?'on':'off'}</button>`:''}
     ${RW.mode==='watch'?`<button class="chip" data-rw="guide" aria-pressed="${RW.guide}">Riff sound: ${RW.guide?'on':'off'}</button>`:''}
    </div>
-   ${RW.mode==='score'&&RW.ladder?`<p class="small muted" style="margin:0">Each 3-star pass adds notes until you’re playing the full riff, then raises the speed 5% at a time up to ${tgt} bpm.</p>`:''}
+   ${RW.mode==='score'&&RW.ladder&&!RW.lp?`<p class="small muted" style="margin:0">Each 3-star pass adds notes until you’re playing the full riff, then raises the speed 5% at a time up to ${tgt} bpm.</p>`:''}
    ${(RW.mode==='score'||RW.mode==='rhythm')&&RW.band?`<p class="small muted" style="margin:0">With band backing on, wear headphones so the mic hears only your guitar.</p>`:''}`}
    ${RW.mode!=='watch'&&mic&&typeof data.micLat!=='number'?`<p class="small muted" style="margin:0">Timing isn’t calibrated yet, so Perfect may read as Late. <button class="btn small ghost" data-rw="cal">Calibrate timing</button></p>`:''}
    ${d?'':`<p class="small muted" style="margin:0">Best full riff: ${m.best?`${Math.round(m.best*100)}% <span class="stars">${rwStarStr(rwStars(m.best))}</span> at ${m.bb} bpm`:'not scored yet'}${m.s3?` · 3 stars up to ${m.s3} bpm`:''}${m.rb?` · rhythm ${Math.round(m.rb*100)}%`:''}</p>`}`;
@@ -3314,7 +3345,7 @@ function rwSumHTML(){const s=RW.sum;const spots=s.mode==='score'?RW.spots:[];
 document.addEventListener('click',e=>{const o=e.target.closest('[data-rwopen]');if(o){e.preventDefault();rwOpen(o.dataset.rwopen);return}
   if(!RW.open||!e.target.closest('#rw'))return;
   const mb=e.target.closest('[data-g="rwmode"] button');if(mb&&!mb.disabled){if(RW.run)rwStop(true);RW.mode=mb.dataset.v;RW.msg='';RW.sum=null;RW.fixed='';rwCtl();return}
-  const lb=e.target.closest('[data-g="rwlvl"] button');if(lb){const was=RW.run;if(was)rwStop(true);RW.li=+lb.dataset.v;rwApplyLevel();rwSet(RW.r.id,{lvl:RW.li});RW.sum=null;rwCtl();if(was)rwStart();return}
+  const lb=e.target.closest('[data-g="rwlvl"] button');if(lb){const was=RW.run;if(was)rwStop(true);RW.li=+lb.dataset.v;rwApplyLevel();RW.la=0;RW.lb=null;rwSet(RW.r.id,{lvl:RW.li});RW.sum=null;rwCtl();if(was)rwStart();return}
   if(e.target.closest('#rw-c')&&RW.mode==='wait'&&RW.run&&RW.w){const w=RW.w,g=RW.gs[w.gi];if(w.B>=w.pass*RW.L+g.at-.6)rwWaitNext(MIC.on?'miss':'good');return}
   const b=e.target.closest('[data-rw]');if(!b)return;const k=b.dataset.rw;
   if(k==='close')rwClose();
@@ -3322,11 +3353,21 @@ document.addEventListener('click',e=>{const o=e.target.closest('[data-rwopen]');
   if(k==='stop')rwStop();
   if(k==='drill')rwStartDrill(+b.dataset.i);
   if(k==='exitdrill'){rwStop(true);rwEndDrill(false)}
-  if(k==='slower'||k==='faster'){RW.bpm=Math.max(30,Math.min(240,RW.bpm+(k==='faster'?5:-5)));rwSet(RW.r.id,{bpm:RW.bpm});if(RW.run&&RW.mode!=='wait')Player.setBpm(RW.bpm);rwCtl()}
+  if(k==='slower'||k==='faster'){rwSetBpm(RW.bpm+(k==='faster'?5:-5));rwCtl()}
+  if(k==='loopgo')rwStartLoop();
+  if(k==='loopend')rwEndLoop();
   if(k==='ladder'){RW.ladder=!RW.ladder;rwCtl()}
   if(k==='band'){RW.band=!RW.band;if(RW.run){rwStop(true);rwStart()}else rwCtl()}
   if(k==='guide'){RW.guide=!RW.guide;if(RW.run){rwStop(true);rwStart()}else rwCtl()}
   if(k==='cal'){RW.msg='';b.disabled=true;b.textContent='Listening… keep the room quiet';micCalibrate((ok,msg)=>{micStop();RW.msg=ok?'':msg;toast(ok?msg:'Calibration didn’t work');rwCtl()})}});
+document.addEventListener('input',e=>{if(!RW.open)return;if(e.target.id==='rw-bpmr'){const v=+e.target.value;const n=$('#rw-bpm');if(n)n.value=v;rwSetBpm(v)}});
+document.addEventListener('change',e=>{if(!RW.open)return;const id=e.target.id;
+  if(id==='rw-bpm'){rwSetBpm(e.target.value);rwCtl()}
+  if(id==='rw-bpmr'){rwSetBpm(e.target.value);rwCtl()}
+  if(id==='rw-la'){RW.la=+e.target.value;if(RW.lb!=null&&RW.lb<RW.la)RW.lb=RW.la;rwCtl()}
+  if(id==='rw-lb'){RW.lb=+e.target.value;if(RW.lb<(RW.la|0))RW.la=RW.lb;rwCtl()}});
+document.addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('rw-loop'))RW.loopOpen=e.target.open},true);
+document.addEventListener('keydown',e=>{if(e.target.id==='rw-bpm'&&e.key==='Enter'){e.target.blur()}});
 window.addEventListener('resize',()=>{if(RW.open){rwSize()}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwStop()});
 (function rwBoot(){const h=document.createElement('div');h.id='rw';h.className='rw';h.hidden=true;h.setAttribute('role','dialog');h.setAttribute('aria-label','Riff runway');
@@ -3338,7 +3379,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwS
   document.body.appendChild(h)})();
 
 /* ================= UPDATES: the home-screen copy picks up each new GitHub deploy ================= */
-const BUILD='20261120081141';
+const BUILD='20261120081650';
 const UPD={last:0,shown:false};
 function updBusy(){return (typeof RW!=='undefined'&&RW.run)||(typeof Player!=='undefined'&&Player.on)||(typeof MIC!=='undefined'&&MIC.on)}
 function updGo(v){try{const a=JSON.parse(localStorage.getItem('coach-upd')||'{}');localStorage.setItem('coach-upd',JSON.stringify({v,n:a.v===v?(a.n||0)+1:1}))}catch(e){}

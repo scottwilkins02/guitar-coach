@@ -3112,6 +3112,9 @@ function rwDraw(B){const x=RW.cv;if(!x)return;const W=RW.W,ppb=RW.ppb,L=RW.L,now
   const pk0=Math.floor((B-RW_HIT/ppb)/L)-1,pk1=Math.floor((B+(W-RW_HIT)/ppb)/L)+1;
   x.textAlign='center';x.textBaseline='middle';
   for(let p=Math.max(0,pk0);p<=pk1;p++){if(!RW.run&&p>0)break;const P=RW.mode==='wait'||!RW.run?{gs:RW.gs,show:RW.show}:rwPG(p);
+    if(P.show&&P.show.size<RW.ns.length){x.globalAlpha=.45;RW.ns.forEach((n,k)=>{if(P.show.has(k))return;const X=bx(p*L+n.at);if(X<-20||X>W+20)return;const y=rwY(n.s);
+      x.beginPath();x.arc(X,y,8,0,7);x.fillStyle='#141517';x.fill();x.lineWidth=1.5;x.strokeStyle='#9aa0a6';x.setLineDash([3,3]);x.stroke();x.setLineDash([]);
+      x.fillStyle='#9aa0a6';x.font='700 9px system-ui,sans-serif';x.fillText(String(n.f),X,y+.5)});x.globalAlpha=1}
     P.gs.forEach((g,gi)=>{const X=bx(p*L+g.at);if(X<-40||X>W+60)return;const v=RW.jd[p+':'+gi];
       g.idx.forEach(k=>{const n=RW.ns[k],y=rwY(n.s),col=rhy?'#9aa0a6':FCOL[n.fin];const end=X+Math.max(0,n.len*ppb-14);
         x.globalAlpha=v&&v.st==='miss'?.35:1;
@@ -3136,7 +3139,7 @@ function rwDraw(B){const x=RW.cv;if(!x)return;const W=RW.W,ppb=RW.ppb,L=RW.L,now
   if(RW.run&&B<0&&B>-4.2&&RW.mode!=='wait'){x.fillStyle='rgba(255,255,255,.9)';x.font='800 34px system-ui,sans-serif';x.fillText(String(Math.min(4,Math.floor(B+4)+1)),W/2,RW_H/2)}
   if(!RW.run){x.fillStyle='rgba(255,255,255,.7)';x.font='600 12px system-ui,sans-serif';x.textAlign='right';
     x.fillText(RW.mode==='wait'?'Notes wait for you at the line':rhy?'Rhythm only: mute the strings':'Notes travel to the orange line',W-10,RW_H-12);x.textAlign='center'}
-  if(RW.lvls.length>1&&!RW.drill){x.fillStyle='rgba(255,255,255,.55)';x.font='700 11px system-ui,sans-serif';x.textAlign='right';x.fillText(RW.lvls[RW.li].name,W-10,12);x.textAlign='center'}
+  if(RW.lvls.length>1&&!RW.drill){x.fillStyle='rgba(255,255,255,.55)';x.font='700 11px system-ui,sans-serif';x.textAlign='right';x.fillText(rwFull()?RW.lvls[RW.li].name:`${RW.lvls[RW.li].name} · ${RW.show.size} of ${RW.ns.length} notes`,W-10,12);x.textAlign='center'}
   RW.fx=RW.fx.filter(f=>now-f.t0<800);RW.fx.forEach(f=>{const a=1-(now-f.t0)/800;x.globalAlpha=Math.max(0,a);x.fillStyle=f.col;x.font='800 13px system-ui,sans-serif';x.textAlign='left';
     x.fillText(f.txt,RW_HIT+18,Math.max(10,rwY(f.s)-16-(1-a)*14));x.globalAlpha=1;x.textAlign='center'})}
 
@@ -3273,6 +3276,7 @@ async function rwStart(){if(RW.run)return;sessionOn();RW.wd=null;RW.stall=false;
   if(RW.mode==='wait'){RW.L=Math.max(1,Math.ceil(RW.total-1e-6));RW.w={B:-2,last:performance.now(),gi:0,pass:0,tries:0,played:false};RW.run=true;sessionOn();rwCtl();return}
   const seq=RW.band&&rwHasBand(r)&&!RW.drill&&!RW.lp?riffSeqAlong(r):riffSeq({ev:r.ev});
   if(RW.mode!=='watch'||!RW.guide)seq.events.forEach(e=>{if(!e.bk)e.notes=null});
+  else if(!rwFull())seq.events.forEach(e=>{if(!e.bk&&e.idx!=null&&!RW.show.has(e.idx))e.notes=null});
   RW.L=seq.beats;RW.run=true;
   Player.start(seq,{bpm:RW.bpm,loop:true,click:true,owner:'rway',onStop:()=>{if(RW.run)rwStop()}});
   rwCtl()}
@@ -3309,8 +3313,8 @@ function rwCtl(){const el=$('#rw-ctl');if(!el||!RW.r)return;const r=RW.r,tgt=rif
     wait:'The notes stop at the orange line until you play the right one. Learn the shapes here before playing in time.'+(mic?'':' Tap the runway to move on.'),
     watch:'The app plays the riff while the notes travel to the line. Watch the colours: they tell you which finger to use.'}[RW.mode];
   const last=RW.pass[RW.pass.length-1],d=RW.drill;
-  const lvlSeg=RW.lvls.length>1&&!d&&RW.mode!=='watch'?`<div><p class="lab" style="margin:0 0 4px">Notes</p><div class="seg" data-g="rwlvl">${RW.lvls.map((L,i)=>`<button data-v="${i}" aria-pressed="${RW.li===i}">${L.name}</button>`).join('')}</div>
-    <p class="small muted" style="margin:4px 0 0">${rwFull()?'Every note in the riff.':RW.li===0?'Only the notes on the beat, so you play in time from the start.':'The beat notes plus the half-beat notes.'}${RW.ladder&&!rwFull()&&RW.mode==='score'?' 3 stars adds more notes.':''}</p></div>`:'';
+  const lvlSeg=RW.lvls.length>1&&!d?`<div><p class="lab" style="margin:0 0 4px">Notes</p><div class="seg" data-g="rwlvl">${RW.lvls.map((L,i)=>`<button data-v="${i}" aria-pressed="${RW.li===i}">${L.name}</button>`).join('')}</div>
+    <p class="small muted" style="margin:4px 0 0">${rwFull()?'Every note in the riff.':(RW.li===0?'Only the notes on the beat, so you play in time from the start.':'The beat notes plus the half-beat notes.')+` Showing ${RW.show.size} of ${RW.ns.length} notes; the faint dashed circles are the ones left out. Choose Full riff to see and hear them all.`}${RW.ladder&&!rwFull()&&RW.mode==='score'?' 3 stars adds more notes.':''}</p></div>`:'';
   el.innerHTML=`${mic?'':`<p class="small fb">Scoring needs the microphone, which only works in the home-screen app. <a href="${MIC_URL}" target="_blank" rel="noopener">Open the mic edition</a>. You can still watch here.</p>`}
    ${d?`<div class="rw-drill"><p class="eyebrow" style="margin:0">Fix-it drill</p><p style="margin:4px 0"><b>${esc(d.label)}</b> with the notes either side, on a loop.</p>
      <p class="small" style="margin:0">Clean runs in a row: <b>${d.clean} of 3</b>. Any miss or wrong note resets the count.</p>
@@ -3389,7 +3393,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwS
   document.body.appendChild(h)})();
 
 /* ================= UPDATES: the home-screen copy picks up each new GitHub deploy ================= */
-const BUILD='20261120083513';
+const BUILD='20261120085634';
 const UPD={last:0,shown:false};
 function updBusy(){return (typeof RW!=='undefined'&&RW.run)||(typeof Player!=='undefined'&&Player.on)||(typeof MIC!=='undefined'&&MIC.on)}
 function updGo(v){try{const a=JSON.parse(localStorage.getItem('coach-upd')||'{}');localStorage.setItem('coach-upd',JSON.stringify({v,n:a.v===v?(a.n||0)+1:1}))}catch(e){}

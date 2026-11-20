@@ -634,7 +634,7 @@ const SILENT_WAV=(()=>{const n=800,b=new Uint8Array(44+n),w=(o,t)=>{for(let i=0;
   let t='';b.forEach(x=>t+=String.fromCharCode(x));return 'data:audio/wav;base64,'+btoa(t)})();
 let SILENT_EL=null;
 function sessionOn(){try{if(!SILENT_EL){SILENT_EL=document.createElement('audio');SILENT_EL.loop=true;SILENT_EL.src=SILENT_WAV;SILENT_EL.setAttribute('playsinline','')}const pr=SILENT_EL.play();if(pr&&pr.catch)pr.catch(()=>{})}catch(e){}}
-function sessionOff(){try{if(SILENT_EL)SILENT_EL.pause()}catch(e){}}
+function sessionOff(){if(typeof RW!=='undefined'&&RW.open)return;try{if(SILENT_EL)SILENT_EL.pause()}catch(e){}}
 function soundHelp(){toast(`No sound: the audio engine is ${AC?AC.state:'not started'}. Tap Play again. If that fails, close and reopen the coach.`)}
 document.addEventListener('pointerdown',()=>{if(AC&&AC.state!=='running'){try{AC.resume().catch(()=>{})}catch(e){}}},true);
 function applyTone(){if(TONEF)TONEF.frequency.value=(data.tone==='acoustic')?9000:3000}
@@ -3069,11 +3069,11 @@ function rwPrep(r,fins){let at=0;const ns=r.ev.map(([s,f,d,tech],i)=>{let prevI=
 function rwStrength(at){const e=1e-3,near=(v)=>Math.abs(v-Math.round(v))<e;return near(at/4)?4:near(at)?3:near(at*2)?2:1}
 function rwLevels(){const all=RW.gsAll,n=all.length;const sets=[all.filter((g,i)=>i===0||rwStrength(g.at)>=3),all.filter((g,i)=>i===0||rwStrength(g.at)>=2),all];
   const out=[];sets.forEach((s,k)=>{if(k<2&&(s.length<Math.max(2,Math.ceil(n*.25))||s.length===n))return;if(out.length&&out[out.length-1].set.length===s.length)return;out.push({k,name:RW_LV[k],set:s})});return out}
-function rwApplyLevel(){RW.li=Math.max(0,Math.min(RW.lvls.length-1,RW.li));const L=RW.lvls[RW.li];
+function rwApplyLevel(){RW.pg=[];RW.segs=[];RW.jd={};RW.li=Math.max(0,Math.min(RW.lvls.length-1,RW.li));const L=RW.lvls[RW.li];
   RW.gs=L.set.map(g=>Object.assign({},g));RW.gs.forEach((g,k)=>{const nx=RW.gs[k+1];g.gap=nx?nx.at-g.at:Math.max(.5,Math.min(2,Math.ceil(RW.total-1e-6)-g.at||RW.ns[g.b].d||1))});
   RW.show=new Set();RW.gs.forEach(g=>g.idx.forEach(i=>{RW.show.add(i);RW.ns[i].len=Math.max(.25,g.gap)}))}
 function rwFull(){return RW.li>=RW.lvls.length-1}
-function rwPG(p){return RW.pg[p]||{gs:RW.gs,show:RW.show,li:RW.li}}
+function rwPG(p){const P=RW.pg[p];return P&&P.ns===RW.ns?P:{gs:RW.gs,show:RW.show,li:RW.li,ns:RW.ns}}
 
 function rwGet(id){return (data.rway||{})[id]||{}}
 function rwSet(id,o){if(RW.drill||RW.lp)return;data.rway=Object.assign({},data.rway||{},{[id]:Object.assign({},rwGet(id),o)});Store.save()}
@@ -3094,7 +3094,7 @@ function rwOpen(id){const r=allRiffs().find(x=>x.id===id)||curRiff();Player.stop
 function rwTitle(){$('#rw-title').innerHTML=`<span class="eyebrow">${RW.drill?'Fix-it drill':RW.lp?'Looping a part':'Runway'}</span><b>${esc(RW.drill?(RW.base.name+' · spot '+(RW.drill.i+1)):RW.lp?(RW.base.name+' · '+RW.lp.label):RW.r.name)}</b>`}
 function rwNeckMarks(){const r=RW.r;RW.neck.set(r.ev.map(([s,f],i)=>({s,f,label:RW.ns[i].fin||'○',cls:'fin'+RW.ns[i].fin})).filter((m,i,a)=>a.findIndex(x=>x.s===m.s&&x.f===m.f)===i));
   const fr=r.ev.map(e=>e[1]).filter(f=>f>0);RW.neck.scrollTo(fr.length?(Math.min(...fr)+Math.max(...fr))/2:0)}
-function rwClose(){rwStop(true);if(RW.drill)rwEndDrill(false);if(RW.lp)rwEndLoop();RW.open=false;$('#rw').hidden=true;document.body.classList.remove('rw-on');if(TAB==='riffs')renderRiffs()}
+function rwClose(){rwStop(true);RW.open=false;sessionOff();if(RW.drill)rwEndDrill(false);if(RW.lp)rwEndLoop();RW.open=false;$('#rw').hidden=true;document.body.classList.remove('rw-on');if(TAB==='riffs')renderRiffs()}
 function rwSize(){const c=$('#rw-c');if(!c)return;const w=c.parentElement.clientWidth||360,dpr=Math.min(3,window.devicePixelRatio||1);
   c.style.width=w+'px';c.style.height=RW_H+'px';c.width=Math.round(w*dpr);c.height=Math.round(RW_H*dpr);RW.W=w;RW.cv=c.getContext('2d');RW.cv.setTransform(dpr,0,0,dpr,0,0)}
 
@@ -3111,7 +3111,7 @@ function rwDraw(B){const x=RW.cv;if(!x)return;const W=RW.W,ppb=RW.ppb,L=RW.L,now
   x.strokeStyle='#f0a640';x.lineWidth=2;x.beginPath();x.moveTo(RW_HIT,RW_TOP-14);x.lineTo(RW_HIT,rwY(0)+14);x.stroke();
   const pk0=Math.floor((B-RW_HIT/ppb)/L)-1,pk1=Math.floor((B+(W-RW_HIT)/ppb)/L)+1;
   x.textAlign='center';x.textBaseline='middle';
-  for(let p=Math.max(0,pk0);p<=pk1;p++){if(!RW.run&&p>0)break;const P=RW.mode==='wait'?{gs:RW.gs,show:RW.show}:rwPG(p);
+  for(let p=Math.max(0,pk0);p<=pk1;p++){if(!RW.run&&p>0)break;const P=RW.mode==='wait'||!RW.run?{gs:RW.gs,show:RW.show}:rwPG(p);
     P.gs.forEach((g,gi)=>{const X=bx(p*L+g.at);if(X<-40||X>W+60)return;const v=RW.jd[p+':'+gi];
       g.idx.forEach(k=>{const n=RW.ns[k],y=rwY(n.s),col=rhy?'#9aa0a6':FCOL[n.fin];const end=X+Math.max(0,n.len*ppb-14);
         x.globalAlpha=v&&v.st==='miss'?.35:1;
@@ -3141,7 +3141,7 @@ function rwDraw(B){const x=RW.cv;if(!x)return;const W=RW.W,ppb=RW.ppb,L=RW.L,now
     x.fillText(f.txt,RW_HIT+18,Math.max(10,rwY(f.s)-16-(1-a)*14));x.globalAlpha=1;x.textAlign='center'})}
 
 /* ---------- timing: map the audio clock to beats, pass by pass ---------- */
-function rwBeat(now){const S=RW.segs;if(Player.on&&Player.owner==='rway'){const last=S[S.length-1];if(!last||Math.abs(Player.loopStart-last.t)>1e-6){S.push({t:Player.loopStart,bpm:Player.bpm});RW.pg[S.length-1]={gs:RW.gs,show:RW.show,li:RW.li}}}
+function rwBeat(now){const S=RW.segs;if(Player.on&&Player.owner==='rway'){const last=S[S.length-1];if(!last||Math.abs(Player.loopStart-last.t)>1e-6){S.push({t:Player.loopStart,bpm:Player.bpm});RW.pg[S.length-1]={gs:RW.gs,show:RW.show,li:RW.li,ns:RW.ns}}}
   if(!S.length)return {k:0,B:-4};let k=S.length-1;while(k>0&&S[k].t>now)k--;return {k,B:k*RW.L+(now-S[k].t)*S[k].bpm/60}}
 function rwGT(p,g){const S=RW.segs[p];return S?S.t+g.at*60/S.bpm:null}
 function rwWin(p,g){const S=RW.segs[p]||RW.segs[RW.segs.length-1];const spb=60/(S?S.bpm:RW.bpm);return Math.max(.09,Math.min(.25,.45*g.gap*spb))}
@@ -3246,18 +3246,25 @@ function rwEndDrill(fixed){const d=RW.drill;if(!d)return;RW.drill=null;RW.r=d.ba
   RW.pass=[];RW.sum=null;RW.jd={};RW.curG=-2;rwTitle();rwNeckMarks();rwCtl();rwScore()}
 
 /* ---------- main loop ---------- */
-function rwFrame(){if(!RW.open){return}const now=AC?AC.currentTime:0;let B;
+function rwWatchdog(now){const w=RW.wd||(RW.wd={t:now,p:performance.now(),tries:0,last:0});const pn=performance.now();
+  if(now!==w.t||(AC&&AC.state==='running'&&now>w.t)){w.t=now;w.p=pn;if(RW.stall){RW.stall=false;RW.msg='';rwCtl()}return}
+  if(pn-w.p>450&&!RW.stall){RW.stall=true;rwCtl()}
+  if(RW.stall&&pn-w.last>1000){w.last=pn;w.tries++;try{AC.resume().catch(()=>{})}catch(e){}}}
+function rwFrame(){if(!RW.open){return}try{rwFrame1()}catch(err){if(!rwFrame.e){rwFrame.e=1;console.error(err)}}RW.raf=requestAnimationFrame(rwFrame)}
+function rwFrame1(){const now=AC?AC.currentTime:0;let B;
   if(RW.mode==='wait'&&RW.w)B=rwWaitStep();
-  else if(RW.run){const t=rwBeat(now);B=t.B;if(RW.mode==='score'||RW.mode==='rhythm')rwFinalise(now)}
+  else if(RW.run){const t=rwBeat(now);B=t.B;if(RW.mode==='score'||RW.mode==='rhythm')rwFinalise(now);rwWatchdog(now)}
   else B=-1.5;
-  rwDraw(B);rwNeckSync(B);RW.raf=requestAnimationFrame(rwFrame)}
+  rwDraw(B);if(RW.stall){const x=RW.cv;x.fillStyle='rgba(20,21,23,.82)';x.fillRect(0,0,RW.W,RW_H);x.fillStyle='#fff';x.textAlign='center';x.font='800 16px system-ui,sans-serif';
+    x.fillText('Your iPhone paused the sound',RW.W/2,RW_H/2-12);x.font='600 13px system-ui,sans-serif';x.fillStyle='#f0a640';x.fillText('Tap here to carry on',RW.W/2,RW_H/2+14)}
+  rwNeckSync(B)}
 function rwNeckSync(B){if(!RW.run||!RW.neck)return;const L=RW.L;const rel=((B%L)+L)%L,p=Math.max(0,Math.floor(B/L));
   const gs=RW.mode==='wait'?RW.gs:rwPG(p).gs;let gi=gs.findIndex(g=>g.at>=rel-.15);if(gi<0)gi=0;
   if(RW.mode==='wait'&&RW.w)gi=RW.w.gi;
   const key=p+':'+gi;if(key===RW.curG)return;RW.curG=key;const g=gs[gi],nx=gs[(gi+1)%gs.length];if(!g)return;
   RW.neck.active(g.idx.map(k=>[RW.ns[k].s,RW.ns[k].f]),nx.idx.map(k=>[RW.ns[k].s,RW.ns[k].f]))}
 
-async function rwStart(){if(RW.run)return;sessionOn();const r=RW.r;RW.sum=null;RW.pass=[];RW.jd={};RW.fx=[];RW.pts=0;RW.streak=0;RW.segs=[];RW.pg=[];RW.lastPass=-1;RW.bw=null;RW.curG=-2;RW.extra=0;RW.fixed='';
+async function rwStart(){if(RW.run)return;sessionOn();RW.wd=null;RW.stall=false;const r=RW.r;RW.sum=null;RW.pass=[];RW.jd={};RW.fx=[];RW.pts=0;RW.streak=0;RW.segs=[];RW.pg=[];RW.lastPass=-1;RW.bw=null;RW.curG=-2;RW.extra=0;RW.fixed='';
   audio();
   if(RW.mode!=='watch'){RW.msg='Starting the microphone…';rwCtl();
     if(!await micStart()){RW.msg=micErrText();RW.mode='watch';rwCtl();return}
@@ -3348,6 +3355,7 @@ document.addEventListener('click',e=>{const o=e.target.closest('[data-rwopen]');
   if(!RW.open||!e.target.closest('#rw'))return;
   const mb=e.target.closest('[data-g="rwmode"] button');if(mb&&!mb.disabled){if(RW.run)rwStop(true);RW.mode=mb.dataset.v;RW.msg='';RW.sum=null;RW.fixed='';rwCtl();return}
   const lb=e.target.closest('[data-g="rwlvl"] button');if(lb){const was=RW.run;if(was)rwStop(true);RW.li=+lb.dataset.v;rwApplyLevel();RW.la=0;RW.lb=null;rwSet(RW.r.id,{lvl:RW.li});RW.sum=null;rwCtl();if(was)rwStart();return}
+  if(e.target.closest('#rw-c')&&RW.stall&&RW.run){RW.stall=false;RW.wd=null;rwStop(true);rwStart();return}
   if(e.target.closest('#rw-c')&&RW.mode==='wait'&&RW.run&&RW.w){const w=RW.w,g=RW.gs[w.gi];if(w.B>=w.pass*RW.L+g.at-.6)rwWaitNext(MIC.on?'miss':'good');return}
   const b=e.target.closest('[data-rw]');if(!b)return;const k=b.dataset.rw;
   if(k==='close')rwClose();
@@ -3381,7 +3389,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwS
   document.body.appendChild(h)})();
 
 /* ================= UPDATES: the home-screen copy picks up each new GitHub deploy ================= */
-const BUILD='20261120082552';
+const BUILD='20261120083513';
 const UPD={last:0,shown:false};
 function updBusy(){return (typeof RW!=='undefined'&&RW.run)||(typeof Player!=='undefined'&&Player.on)||(typeof MIC!=='undefined'&&MIC.on)}
 function updGo(v){try{const a=JSON.parse(localStorage.getItem('coach-upd')||'{}');localStorage.setItem('coach-upd',JSON.stringify({v,n:a.v===v?(a.n||0)+1:1}))}catch(e){}

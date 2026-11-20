@@ -3338,7 +3338,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwS
   document.body.appendChild(h)})();
 
 /* ================= UPDATES: the home-screen copy picks up each new GitHub deploy ================= */
-const BUILD='20261120080317';
+const BUILD='20261120081141';
 const UPD={last:0,shown:false};
 function updBusy(){return (typeof RW!=='undefined'&&RW.run)||(typeof Player!=='undefined'&&Player.on)||(typeof MIC!=='undefined'&&MIC.on)}
 function updGo(v){try{const a=JSON.parse(localStorage.getItem('coach-upd')||'{}');localStorage.setItem('coach-upd',JSON.stringify({v,n:a.v===v?(a.n||0)+1:1}))}catch(e){}
@@ -3673,6 +3673,8 @@ function renderGhSync(){const el=$('#p-ghsync');if(!el)return;if(inClaude()){el.
     <p><b>Connected to GitHub.</b> ${t?`Last synced at ${t}.`:'Not synced yet this session.'} Your progress syncs when the app opens, when you come back to it, and a few seconds after each change. Set up the same on your other devices.</p>
     ${SY.err?`<p class="fb bad small">${esc(SY.err)}</p>`:''}
     <div class="row btns"><button class="btn pri" data-sy="now">${SY.busy?'Syncing…':'Sync now'}</button><button class="btn ghost" data-sy="off">Disconnect this device</button></div>
+    <button class="btn small ghost" data-sy="copy" style="align-self:start">Copy token for another device</button>
+    <p class="muted small" style="margin:0">Your home-screen app and Safari keep separate storage, so each needs the token pasted once. After pasting it, copy something else so the token doesn’t sit on your clipboard.</p>
     <p class="muted small">Progress merges in both directions and nothing is counted twice. A reset or a deleted riff on one device won’t remove it from the others.</p>`
    :`<h3 class="sec" style="margin:0">Sync between devices</h3>
     <p>Keep your iPhone and iPad in step automatically. The app stores your progress in a secret gist (a small file) on your GitHub account. Secret gists aren’t listed or searchable; only someone with its exact link could see it, and it holds practice stats only.</p>
@@ -3685,6 +3687,8 @@ function renderGhSync(){const el=$('#p-ghsync');if(!el)return;if(inClaude()){el.
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-sy]');if(!b)return;const k=b.dataset.sy;
   if(k==='connect'){b.textContent='Connecting…';const ok=await syConnect(($('#sy-tok')||{}).value);renderGhSync();if(ok)toast('Sync connected');}
   if(k==='now')syncNow();
+  if(k==='copy'){const tk=SY.cfg&&SY.cfg.token;if(!tk)return;const done=()=>toast('Token copied. Paste it into Sync on the other device.');
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(tk).then(done,()=>{window.prompt('Copy this token:',tk)});else window.prompt('Copy this token:',tk)}
   if(k==='off'){SY.cfg=null;sySave();SY.err='';SY.last=null;setSync();renderGhSync();toast('This device is disconnected from sync')}});
 document.addEventListener('visibilitychange',()=>{if(!SY.cfg)return;if(document.visibilityState==='visible')syncNow();else if(SY.t){clearTimeout(SY.t);syncNow()}});
 

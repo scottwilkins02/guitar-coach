@@ -387,7 +387,8 @@ body.rw-on{overflow:hidden}
 #rw-bar .st{position:absolute;top:50%;transform:translate(-50%,-52%);font-size:20px;line-height:1;color:#8a8f96;text-shadow:0 0 3px var(--bg)}
 #rw-bar .st.on{color:#e0a400}
 .rw-cwrap{border-radius:12px;overflow:hidden;background:#141517}
-#rw-c{display:block;touch-action:manipulation}
+#rw-c{display:block;touch-action:pan-y;cursor:grab}
+.rw-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .rw-key{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
 .rw-key i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px;border:1px solid rgba(0,0,0,.25)}
 .rw-speed{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -704,7 +705,7 @@ const Player={on:false,owner:null,
     this.items=items;
     let t=c.currentTime+.12;const spb=60/this.bpm;
     if(o.countIn!==false){for(let k=0;k<4;k++){clickAt(t+k*spb,k===0);this.q.push({t:t+k*spb,beat:k,count:true})}t+=4*spb}
-    this.loopStart=t;this.on=true;
+    const from=Math.max(0,Math.min(seq.beats-1e-6,o.from||0));this.loopStart=t-from*spb;if(from>0){this.i=items.findIndex(it=>it.at>=from-1e-6);if(this.i<0)this.i=items.length}this.on=true;
     this.timer=setInterval(()=>{this.tick();if(this.on)this.frame()},25);this.tick();
     const t0=c.currentTime;this.watch=setTimeout(()=>{if(this.on&&AC.currentTime-t0<.2){this.stop();soundHelp()}},1500);
     const fr=()=>{if(!this.on)return;this.frame();this.raf=requestAnimationFrame(fr)};this.raf=requestAnimationFrame(fr);
@@ -3084,7 +3085,7 @@ function rwMicOK(){return !inClaude()&&!!(navigator.mediaDevices&&navigator.medi
 function rwNoteName(n){return RW_STR[n.s]+n.f+(/^b/.test(n.tech)?' bend':'')}
 
 function rwOpen(id){const r=allRiffs().find(x=>x.id===id)||curRiff();Player.stop();
-  RW.r=r;RW.base=null;RW.drill=null;RW.lp=null;RW.guide=true;RW.la=0;RW.lb=null;RW.spots=[];RW.fixed='';RW.open=true;rwPrep(r);const m=rwGet(r.id),tgt=riffTarget(r);
+  RW.r=r;RW.base=null;RW.drill=null;RW.lp=null;RW.pos=0;RW.paused=false;RW.guide=true;RW.la=0;RW.lb=null;RW.spots=[];RW.fixed='';RW.open=true;rwPrep(r);const m=rwGet(r.id),tgt=riffTarget(r);
   RW.li=typeof m.lvl==='number'?m.lvl:0;rwApplyLevel();
   RW.bpm=m.bpm||Math.max(40,Math.round(tgt*.6));if(!rwMicOK())RW.mode='watch';
   RW.band=RW.band&&rwHasBand(r);RW.sum=null;RW.pass=[];RW.jd={};RW.fx=[];RW.pts=0;RW.streak=0;RW.msg='';RW.curG=-2;
@@ -3109,9 +3110,11 @@ function rwDraw(B){const x=RW.cv;if(!x)return;const W=RW.W,ppb=RW.ppb,L=RW.L,now
   for(let s=0;s<6;s++){x.strokeStyle=s<3?'#7d6f55':'#8a8f96';x.lineWidth=2.2-s*.3;x.beginPath();x.moveTo(0,rwY(s));x.lineTo(W,rwY(s));x.stroke()}
   x.fillStyle='rgba(240,166,64,.14)';x.fillRect(RW_HIT-14,RW_TOP-14,28,rwY(0)-RW_TOP+28);
   x.strokeStyle='#f0a640';x.lineWidth=2;x.beginPath();x.moveTo(RW_HIT,RW_TOP-14);x.lineTo(RW_HIT,rwY(0)+14);x.stroke();
+  if(!RW.run){const X=bx(RW.pos||0);x.strokeStyle='#f0a640';x.lineWidth=2;x.setLineDash([5,4]);x.beginPath();x.moveTo(X,RW_TOP-12);x.lineTo(X,rwY(0)+12);x.stroke();x.setLineDash([]);
+    x.fillStyle='#f0a640';x.font='800 10px system-ui,sans-serif';x.textAlign='center';x.fillText('START',X,RW_TOP-18)}
   const pk0=Math.floor((B-RW_HIT/ppb)/L)-1,pk1=Math.floor((B+(W-RW_HIT)/ppb)/L)+1;
   x.textAlign='center';x.textBaseline='middle';
-  for(let p=Math.max(0,pk0);p<=pk1;p++){if(!RW.run&&p>0)break;const P=RW.mode==='wait'||!RW.run?{gs:RW.gs,show:RW.show}:rwPG(p);
+  for(let p=Math.max(0,pk0);p<=pk1;p++){if(!RW.run&&p>1)break;const P=RW.mode==='wait'||!RW.run?{gs:RW.gs,show:RW.show}:rwPG(p);
     if(P.show&&P.show.size<RW.ns.length){x.globalAlpha=.45;RW.ns.forEach((n,k)=>{if(P.show.has(k))return;const X=bx(p*L+n.at);if(X<-20||X>W+20)return;const y=rwY(n.s);
       x.beginPath();x.arc(X,y,8,0,7);x.fillStyle='#141517';x.fill();x.lineWidth=1.5;x.strokeStyle='#9aa0a6';x.setLineDash([3,3]);x.stroke();x.setLineDash([]);
       x.fillStyle='#9aa0a6';x.font='700 9px system-ui,sans-serif';x.fillText(String(n.f),X,y+.5)});x.globalAlpha=1}
@@ -3138,7 +3141,7 @@ function rwDraw(B){const x=RW.cv;if(!x)return;const W=RW.W,ppb=RW.ppb,L=RW.L,now
     x.fillStyle='#d9dde2';x.font='700 10px system-ui,sans-serif';x.fillText(l,RW_HIT,y+.5)});
   if(RW.run&&B<0&&B>-4.2&&RW.mode!=='wait'){x.fillStyle='rgba(255,255,255,.9)';x.font='800 34px system-ui,sans-serif';x.fillText(String(Math.min(4,Math.floor(B+4)+1)),W/2,RW_H/2)}
   if(!RW.run){x.fillStyle='rgba(255,255,255,.7)';x.font='600 12px system-ui,sans-serif';x.textAlign='right';
-    x.fillText(RW.mode==='wait'?'Notes wait for you at the line':rhy?'Rhythm only: mute the strings':'Notes travel to the orange line',W-10,RW_H-12);x.textAlign='center'}
+    x.fillText(RW.paused?'Paused · drag sideways to move':(RW.pos||0)>0?'Starts at '+rwPosLabel(RW.pos)+' · drag to move':'Drag sideways to choose where to start',W-10,RW_H-12);x.textAlign='center'}
   if(RW.lvls.length>1&&!RW.drill){x.fillStyle='rgba(255,255,255,.55)';x.font='700 11px system-ui,sans-serif';x.textAlign='right';x.fillText(rwFull()?RW.lvls[RW.li].name:`${RW.lvls[RW.li].name} · ${RW.show.size} of ${RW.ns.length} notes`,W-10,12);x.textAlign='center'}
   RW.fx=RW.fx.filter(f=>now-f.t0<800);RW.fx.forEach(f=>{const a=1-(now-f.t0)/800;x.globalAlpha=Math.max(0,a);x.fillStyle=f.col;x.font='800 13px system-ui,sans-serif';x.textAlign='left';
     x.fillText(f.txt,RW_HIT+18,Math.max(10,rwY(f.s)-16-(1-a)*14));x.globalAlpha=1;x.textAlign='center'})}
@@ -3184,13 +3187,13 @@ function rwFinalise(now){const lat=micLat();
     if(!open&&p>RW.lastPass)rwPassDone(p)}
   rwScore()}
 
-function rwPassDone(p){RW.lastPass=p;const P=rwPG(p),n=P.gs.length;let sc=0,c={perfect:0,good:0,bend:0,wrong:0,miss:0};
-  P.gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];const st=v?v.st:'miss';c[st]++;sc+=RW_PT[st]||0});
+function rwPassDone(p){RW.lastPass=p;const P=rwPG(p);const n=P.gs.filter((g,gi)=>!(RW.jd[p+':'+gi]&&RW.jd[p+':'+gi].st==='skip')).length;if(!n)return;let sc=0,c={perfect:0,good:0,bend:0,wrong:0,miss:0};
+  P.gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];const st=v?v.st:'miss';if(st==='skip')return;c[st]++;sc+=RW_PT[st]||0});
   const pct=sc/n,stars=rwStars(pct),bpm=(RW.segs[p]||{}).bpm||RW.bpm,full=P.li>=RW.lvls.length-1;
   const offs=P.gs.map((g,gi)=>RW.jd[p+':'+gi]).filter(v=>v&&RW_PT[v.st]>0&&typeof v.dt==='number').map(v=>v.dt*1000).sort((a,b)=>a-b);
   const med=offs.length?offs[offs.length>>1]:0,spr=offs.length?offs.reduce((a,o)=>a+Math.abs(o-med),0)/offs.length:0;
-  const out=[];P.gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];const st=v?v.st:'miss';g.idx.forEach(i=>out[i]={i,st:st==='miss'?'miss':st==='wrong'||st==='bend'?'wrong':'ok'})});
-  const fails=P.gs.map((g,gi)=>{const v=RW.jd[p+':'+gi];return !v||!(v.st==='perfect'||v.st==='good')});
+  const out=[];P.gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];const st=v?v.st:'miss';if(st!=='skip')g.idx.forEach(i=>out[i]={i,st:st==='miss'?'miss':st==='wrong'||st==='bend'?'wrong':'ok'})});
+  const fails=P.gs.map((g,gi)=>{const v=RW.jd[p+':'+gi];return !v||!(v.st==='perfect'||v.st==='good'||v.st==='skip')});
   const rec={p,pct,stars,bpm,c,med:Math.round(med),spr:Math.round(spr),out,fails,gs:P.gs,li:P.li,full,mode:RW.mode,extra:RW.extra};RW.extra=0;
   RW.pass.push(rec);
   // fix-it drill: three clean runs in a row and the spot is fixed
@@ -3210,7 +3213,8 @@ function rwPassDone(p){RW.lastPass=p;const P=rwPG(p),n=P.gs.length;let sc=0,c={p
 
 function rwScore(){let sc=0,gs;if(RW.mode==='wait'){gs=RW.gs;const p=RW.w?RW.w.pass:0;gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];if(v)sc+=RW_PT[v.st]||0})}
   else{const p=Math.max(0,RW.segs.length-1);gs=rwPG(p).gs;gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];if(v)sc+=RW_PT[v.st]||0})}
-  const pct=gs.length?sc/gs.length:0;const f=$('#rw-fill');if(f)f.style.width=Math.round(pct*100)+'%';
+  const pp=RW.mode==='wait'?(RW.w?RW.w.pass:0):Math.max(0,RW.segs.length-1);const nn=gs.filter((g,gi)=>!(RW.jd[pp+':'+gi]&&RW.jd[pp+':'+gi].st==='skip')).length;
+  const pct=nn?sc/nn:0;const f=$('#rw-fill');if(f)f.style.width=Math.round(pct*100)+'%';
   $$('#rw-bar .st').forEach(s=>s.classList.toggle('on',pct>=+s.dataset.p));
   const e=$('#rw-score');if(e)e.textContent=RW.pts;const k=$('#rw-streak');if(k)k.textContent=RW.streak>=4?`${RW.streak} in a row`:''}
 
@@ -3230,13 +3234,13 @@ function rwSub(gs){const base=RW.r;const idx=[];gs.forEach(g=>g.idx.forEach(k=>i
     let d=0;if(lastInG)d=gi<gs.length-1?gs[gi+1].at-g.at:Math.max(1,g.gap);
     const n=RW.ns[k];const tech=(n.tech==='/'||n.tech==='h'||n.tech==='p')&&!(n.prevI!=null&&keep.has(n.prevI))?'':n.tech;const o=[e[0],e[1],d];if(tech)o.push(tech);return o});
   return {ev,fins:idx.map(k=>RW.ns[k].fin)}}
-function rwStartLoop(){if(RW.drill||RW.lp)return;const n=RW.gs.length;let a=Math.max(0,Math.min(n-1,RW.la|0)),b=Math.max(0,Math.min(n-1,RW.lb==null?n-1:RW.lb|0));if(b<a){const t=a;a=b;b=t}
+function rwStartLoop(){if(RW.drill||RW.lp)return;RW.pos=0;RW.paused=false;const n=RW.gs.length;let a=Math.max(0,Math.min(n-1,RW.la|0)),b=Math.max(0,Math.min(n-1,RW.lb==null?n-1:RW.lb|0));if(b<a){const t=a;a=b;b=t}
   const was=RW.run;rwStop(true);const gs=RW.gs.slice(a,b+1),base=RW.r;const sub=rwSub(gs);
   RW.lp={a,b,base,li:RW.li,label:a===b?`note ${a+1}`:`notes ${a+1} to ${b+1}`};RW.base=base;RW.r=Object.assign({},base,{ev:sub.ev});rwPrep(RW.r,sub.fins);
   RW.lvls=[{k:2,name:RW_LV[2],set:RW.gsAll}];RW.li=0;rwApplyLevel();RW.sum=null;RW.pass=[];RW.jd={};RW.curG=-2;rwTitle();rwNeckMarks();rwCtl();rwScore();if(was)rwStart()}
-function rwEndLoop(){const l=RW.lp;if(!l)return;const was=RW.run;rwStop(true);RW.lp=null;RW.r=l.base;RW.base=null;rwPrep(RW.r);RW.li=l.li;rwApplyLevel();
+function rwEndLoop(){const l=RW.lp;if(!l)return;RW.pos=0;RW.paused=false;const was=RW.run;rwStop(true);RW.lp=null;RW.r=l.base;RW.base=null;rwPrep(RW.r);RW.li=l.li;rwApplyLevel();
   RW.pass=[];RW.sum=null;RW.jd={};RW.curG=-2;rwTitle();rwNeckMarks();rwCtl();rwScore();if(was)rwStart()}
-function rwStartDrill(i){const s=RW.spots[i];if(!s)return;rwStop(true);const base=RW.r,gs=s.gs.slice(s.a,s.b+1);
+function rwStartDrill(i){RW.pos=0;RW.paused=false;const s=RW.spots[i];if(!s)return;rwStop(true);const base=RW.r,gs=s.gs.slice(s.a,s.b+1);
   const idx=[];gs.forEach(g=>g.idx.forEach(k=>idx.push(k)));const keep=new Set(idx);
   const ev=idx.map((k,j)=>{const e=base.ev[k],g=gs.find(x=>x.idx.includes(k)),gi=gs.indexOf(g);const lastInG=k===g.idx[g.idx.length-1];
     let d=0;if(lastInG)d=gi<gs.length-1?gs[gi+1].at-g.at:Math.max(1,g.gap);
@@ -3257,7 +3261,7 @@ function rwFrame(){if(!RW.open){return}try{rwFrame1()}catch(err){if(!rwFrame.e){
 function rwFrame1(){const now=AC?AC.currentTime:0;let B;
   if(RW.mode==='wait'&&RW.w)B=rwWaitStep();
   else if(RW.run){const t=rwBeat(now);B=t.B;if(RW.mode==='score'||RW.mode==='rhythm')rwFinalise(now);rwWatchdog(now)}
-  else B=-1.5;
+  else B=(RW.pos||0)-1;
   rwDraw(B);if(RW.stall){const x=RW.cv;x.fillStyle='rgba(20,21,23,.82)';x.fillRect(0,0,RW.W,RW_H);x.fillStyle='#fff';x.textAlign='center';x.font='800 16px system-ui,sans-serif';
     x.fillText('Your iPhone paused the sound',RW.W/2,RW_H/2-12);x.font='600 13px system-ui,sans-serif';x.fillStyle='#f0a640';x.fillText('Tap here to carry on',RW.W/2,RW_H/2+14)}
   rwNeckSync(B)}
@@ -3267,26 +3271,38 @@ function rwNeckSync(B){if(!RW.run||!RW.neck)return;const L=RW.L;const rel=((B%L)
   const key=p+':'+gi;if(key===RW.curG)return;RW.curG=key;const g=gs[gi],nx=gs[(gi+1)%gs.length];if(!g)return;
   RW.neck.active(g.idx.map(k=>[RW.ns[k].s,RW.ns[k].f]),nx.idx.map(k=>[RW.ns[k].s,RW.ns[k].f]))}
 
-async function rwStart(){if(RW.run)return;sessionOn();RW.wd=null;RW.stall=false;const r=RW.r;RW.sum=null;RW.pass=[];RW.jd={};RW.fx=[];RW.pts=0;RW.streak=0;RW.segs=[];RW.pg=[];RW.lastPass=-1;RW.bw=null;RW.curG=-2;RW.extra=0;RW.fixed='';
+async function rwStart(resume){if(RW.run)return;sessionOn();RW.wd=null;RW.stall=false;const r=RW.r;if(!resume){RW.sum=null;RW.pass=[];RW.pts=0;RW.streak=0}RW.paused=false;RW.jd={};RW.fx=[];RW.segs=[];RW.pg=[];RW.lastPass=-1;RW.bw=null;RW.curG=-2;RW.extra=0;RW.fixed='';
   audio();
   if(RW.mode!=='watch'){RW.msg='Starting the microphone…';rwCtl();
     if(!await micStart()){RW.msg=micErrText();RW.mode='watch';rwCtl();return}
     MIC.noteSubs.add(rwMicNote);MIC.frameSubs.add(rwMicFrame);MIC.onsetSubs.add(rwOnset)}
   RW.msg='';
-  if(RW.mode==='wait'){RW.L=Math.max(1,Math.ceil(RW.total-1e-6));RW.w={B:-2,last:performance.now(),gi:0,pass:0,tries:0,played:false};RW.run=true;sessionOn();rwCtl();return}
+  if(RW.mode==='wait'){RW.L=Math.max(1,Math.ceil(RW.total-1e-6));const from=rwFrom();let gi=RW.gs.findIndex(g=>g.at>=from-1e-6);let pass=0;if(gi<0){gi=0;pass=1}
+    RW.gs.forEach((g,k)=>{if(pass===0&&k<gi)RW.jd['0:'+k]={st:'skip',fin:true}});
+    RW.w={B:pass*RW.L+RW.gs[gi].at-2,last:performance.now(),gi,pass,tries:0,played:false};RW.run=true;sessionOn();rwCtl();return}
   const seq=RW.band&&rwHasBand(r)&&!RW.drill&&!RW.lp?riffSeqAlong(r):riffSeq({ev:r.ev});
   if(RW.mode!=='watch'||!RW.guide)seq.events.forEach(e=>{if(!e.bk)e.notes=null});
   else if(!rwFull())seq.events.forEach(e=>{if(!e.bk&&e.idx!=null&&!RW.show.has(e.idx))e.notes=null});
-  RW.L=seq.beats;RW.run=true;
-  Player.start(seq,{bpm:RW.bpm,loop:true,click:true,owner:'rway',onStop:()=>{if(RW.run)rwStop()}});
+  RW.L=seq.beats;RW.run=true;const from=rwFrom();RW.from0=from;
+  if(from>0)RW.gs.forEach((g,k)=>{if(g.at<from-1e-6)RW.jd['0:'+k]={st:'skip',fin:true}});
+  Player.start(seq,{bpm:RW.bpm,loop:true,click:true,owner:'rway',from,onStop:()=>{if(RW.run)rwStop()}});
   rwCtl()}
-function rwStop(silent){const was=RW.run;RW.run=false;if(Player.on&&Player.owner==='rway')Player.stop();
+function rwLoopLen(){if(RW.mode==='wait')return Math.max(1,Math.ceil(RW.total-1e-6));const r=RW.r;return (RW.band&&rwHasBand(r)&&!RW.drill&&!RW.lp?riffSeqAlong(r):riffSeq({ev:r.ev})).beats}
+function rwFrom(){const L=rwLoopLen();const p=RW.pos||0;return p>0&&p<L?p:0}
+function rwPosLabel(p){const b=Math.floor(p/4)+1,bt=Math.round((p%4+1)*100)/100;return `bar ${b}, beat ${bt}`}
+function rwSnap(p){const L=rwLoopLen();p=((p%L)+L)%L;let best=0,bd=1e9;RW.gs.forEach(g=>{const d=Math.min(Math.abs(g.at-p),L-Math.abs(g.at-p));if(d<bd){bd=d;best=g.at}});return best}
+function rwPause(){if(!RW.run)return;const L=RW.L||rwLoopLen();
+  if(RW.mode==='wait'&&RW.w){RW.pos=RW.gs[RW.w.gi].at}
+  else{const B=rwBeat(AC.currentTime).B;if(B>=(RW.from0||0)){const rel=((B%L)+L)%L;let at=0;RW.gs.forEach(g=>{if(g.at<=rel+.05)at=g.at});RW.pos=at}}
+  rwStop(true);RW.paused=true;rwCtl()}
+function rwSummary(){if(!RW.pass.length)return;const best=RW.pass.slice().sort((a,b)=>b.pct-a.pct||b.bpm-a.bpm)[0];RW.sum=best;
+  if(RW.mode==='score'&&!RW.drill&&!RW.lp){RW.spots=rwFindSpots();
+    if(best.full){const ok=best.c.perfect+best.c.good+best.c.bend;data.checks=(data.checks||[]).concat([{d:today(),i:'riff:'+RW.r.id,bpm:best.bpm,hit:ok,n:best.gs.length,med:best.med||0,spr:best.spr||0}]).slice(-300);Store.save()}}}
+function rwStop(silent){RW.paused=false;const was=RW.run;RW.run=false;if(Player.on&&Player.owner==='rway')Player.stop();
   MIC.noteSubs.delete(rwMicNote);MIC.frameSubs.delete(rwMicFrame);MIC.onsetSubs.delete(rwOnset);if(MIC.on)micStop();RW.bw=null;
   if(RW.w){sessionOff();RW.w=null}
   RW.neck&&RW.neck.active([],[]);RW.curG=-2;
-  if(was&&!silent&&RW.pass.length){const best=RW.pass.slice().sort((a,b)=>b.pct-a.pct||b.bpm-a.bpm)[0];RW.sum=best;
-    if(RW.mode==='score'&&!RW.drill&&!RW.lp){RW.spots=rwFindSpots();
-      if(best.full){const ok=best.c.perfect+best.c.good+best.c.bend;data.checks=(data.checks||[]).concat([{d:today(),i:'riff:'+RW.r.id,bpm:best.bpm,hit:ok,n:best.gs.length,med:best.med||0,spr:best.spr||0}]).slice(-300);Store.save()}}}
+  if(was&&!silent)rwSummary();
   if(!silent)rwCtl();if(CEL.q.length&&!CEL.on)setTimeout(()=>{if(!RW.run&&!CEL.on)celNext()},400)}
 
 /* ---------- wait mode: notes stop at the line until you play them ---------- */
@@ -3300,7 +3316,7 @@ function rwWaitNote(n){const w=RW.w;if(!w)return;const g=RW.gs[w.gi],tg=w.pass*R
 function rwWaitNext(st){const w=RW.w;const g=RW.gs[w.gi];RW.jd[w.pass+':'+w.gi]={st,fin:true};
   if(st==='perfect'){rwFx('Got it!','#7CFC9A',g.top.s);RW.streak++;RW.pts+=10+Math.min(10,RW.streak>>1)}else if(st==='good'){rwFx('Got it','#9fd3ff',g.top.s);RW.streak=0;RW.pts+=8}else{RW.streak=0}
   w.gi++;w.tries=0;w.played=false;
-  if(w.gi>=RW.gs.length){const p=w.pass;w.gi=0;w.pass++;const n=RW.gs.length;let sc=0,c={perfect:0,good:0,bend:0,wrong:0,miss:0};RW.gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];const s=v?v.st:'miss';c[s]++;sc+=RW_PT[s]||0});
+  if(w.gi>=RW.gs.length){const p=w.pass;w.gi=0;w.pass++;let n=0,sc=0,c={perfect:0,good:0,bend:0,wrong:0,miss:0};RW.gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];const s=v?v.st:'miss';if(s==='skip')return;n++;c[s]++;sc+=RW_PT[s]||0});n=n||1;
     const out=[];RW.gs.forEach((g,gi)=>{const v=RW.jd[p+':'+gi];g.idx.forEach(i=>out[i]={i,st:v&&v.st!=='miss'?'ok':'miss'})});
     RW.pass.push({p,pct:sc/n,stars:rwStars(sc/n),bpm:RW.bpm,c,wait:true,mode:'wait',li:RW.li,gs:RW.gs,fails:[],out});rwCtl()}
   rwScore()}
@@ -3324,7 +3340,9 @@ function rwCtl(){const el=$('#rw-ctl');if(!el||!RW.r)return;const r=RW.r,tgt=rif
    <p class="small muted" style="margin:0">${info}</p>`}
    ${lvlSeg}
    ${RW.msg?`<p class="small fb bad">${esc(RW.msg)}</p>`:''}
-   <button class="btn pri rw-big" data-rw="${RW.run?'stop':'start'}">${RW.run?'Stop':'Start'}</button>
+   ${RW.run?`<div class="rw-btns"><button class="btn rw-big" data-rw="pause">❚❚ Pause</button><button class="btn pri rw-big" data-rw="stop">Stop</button></div>`
+     :RW.paused?`<div class="rw-btns"><button class="btn pri rw-big" data-rw="resume">▶ Resume</button><button class="btn rw-big" data-rw="stop">Stop</button></div><p class="small muted" style="margin:0">Paused at ${rwPosLabel(rwFrom())}. Drag the runway sideways to move, then Resume.</p>`
+     :`<button class="btn pri rw-big" data-rw="start">${rwFrom()>0?'▶ Start from '+rwPosLabel(rwFrom()):'▶ Start'}</button>${rwFrom()>0?`<button class="btn small ghost" data-rw="tostart" style="align-self:start">Back to the beginning</button>`:''}`}
    ${last&&!d?`<div class="rw-pass"><b>${last.wait?'Run':'Pass'} ${RW.pass.length}</b> <span class="stars">${rwStarStr(last.stars)}</span> ${Math.round(last.pct*100)}% <span class="muted small">at ${last.bpm} bpm${last.full||last.mode==='wait'?'':' · '+RW_LV[RW.lvls[last.li]?RW.lvls[last.li].k:2]}${last.wait?'':last.mode==='rhythm'?` · ${last.c.perfect} perfect, ${last.c.good} good, ${last.c.miss} missed${last.extra?`, ${last.extra} extra hits`:''}`:` · ${last.c.perfect} perfect, ${last.c.good} good${last.c.bend?`, ${last.c.bend} bend flat`:''}, ${last.c.miss+last.c.wrong} missed`}</span></div>`:''}
    ${RW.sum&&!RW.run&&!d?rwSumHTML():''}
    <div class="rw-speed"><label class="lab" for="rw-bpm">Speed</label><button class="btn small" data-rw="slower" aria-label="Slower">−</button><input id="rw-bpm" class="rw-bpmin" type="number" inputmode="numeric" min="30" max="240" value="${RW.bpm}" aria-label="Tempo in bpm"><span class="small">bpm</span><button class="btn small" data-rw="faster" aria-label="Faster">+</button><span class="small muted">target ${tgt}</span></div>
@@ -3357,14 +3375,18 @@ function rwSumHTML(){const s=RW.sum;const spots=s.mode==='score'?RW.spots:[];
 
 document.addEventListener('click',e=>{const o=e.target.closest('[data-rwopen]');if(o){e.preventDefault();rwOpen(o.dataset.rwopen);return}
   if(!RW.open||!e.target.closest('#rw'))return;
-  const mb=e.target.closest('[data-g="rwmode"] button');if(mb&&!mb.disabled){if(RW.run)rwStop(true);RW.mode=mb.dataset.v;RW.msg='';RW.sum=null;RW.fixed='';rwCtl();return}
+  const mb=e.target.closest('[data-g="rwmode"] button');if(mb&&!mb.disabled){if(RW.run)rwStop(true);RW.paused=false;RW.mode=mb.dataset.v;RW.msg='';RW.sum=null;RW.fixed='';rwCtl();return}
   const lb=e.target.closest('[data-g="rwlvl"] button');if(lb){const was=RW.run;if(was)rwStop(true);RW.li=+lb.dataset.v;rwApplyLevel();RW.la=0;RW.lb=null;rwSet(RW.r.id,{lvl:RW.li});RW.sum=null;rwCtl();if(was)rwStart();return}
+  if(e.target.closest('#rw-c')&&RW.dragged&&Date.now()-RW.dragged<400)return;
   if(e.target.closest('#rw-c')&&RW.stall&&RW.run){RW.stall=false;RW.wd=null;rwStop(true);rwStart();return}
   if(e.target.closest('#rw-c')&&RW.mode==='wait'&&RW.run&&RW.w){const w=RW.w,g=RW.gs[w.gi];if(w.B>=w.pass*RW.L+g.at-.6)rwWaitNext(MIC.on?'miss':'good');return}
   const b=e.target.closest('[data-rw]');if(!b)return;const k=b.dataset.rw;
   if(k==='close')rwClose();
   if(k==='start')rwStart();
-  if(k==='stop')rwStop();
+  if(k==='pause')rwPause();
+  if(k==='resume')rwStart(true);
+  if(k==='tostart'){RW.pos=0;rwCtl()}
+  if(k==='stop'){if(RW.run)rwStop();else{RW.paused=false;rwSummary()}RW.pos=0;rwCtl()}
   if(k==='drill')rwStartDrill(+b.dataset.i);
   if(k==='exitdrill'){rwStop(true);rwEndDrill(false)}
   if(k==='slower'||k==='faster'){rwSetBpm(RW.bpm+(k==='faster'?5:-5));rwCtl()}
@@ -3382,6 +3404,13 @@ document.addEventListener('change',e=>{if(!RW.open)return;const id=e.target.id;
   if(id==='rw-lb'){RW.lb=+e.target.value;if(RW.lb<(RW.la|0))RW.la=RW.lb;rwCtl()}});
 document.addEventListener('toggle',e=>{if(e.target.classList&&e.target.classList.contains('rw-loop'))RW.loopOpen=e.target.open},true);
 document.addEventListener('keydown',e=>{if(e.target.id==='rw-bpm'&&e.key==='Enter'){e.target.blur()}});
+(function(){let d=null;
+  document.addEventListener('pointerdown',e=>{if(!RW.open||e.target.id!=='rw-c'||RW.stall)return;d={x:e.clientX,pos:RW.pos||0,moved:false,id:e.pointerId}});
+  document.addEventListener('pointermove',e=>{if(!d||e.pointerId!==d.id)return;const dx=e.clientX-d.x;if(!d.moved&&Math.abs(dx)<8)return;
+    if(!d.moved){d.moved=true;if(RW.run){rwPause();d.pos=RW.pos||0}}
+    const L=rwLoopLen();RW.pos=(((d.pos-dx/RW.ppb)%L)+L)%L});
+  const end=e=>{if(!d||e.pointerId!==d.id)return;if(d.moved){RW.pos=rwSnap(RW.pos);RW.dragged=Date.now();rwCtl()}d=null};
+  document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end)})();
 window.addEventListener('resize',()=>{if(RW.open){rwSize()}});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwStop()});
 (function rwBoot(){const h=document.createElement('div');h.id='rw';h.className='rw';h.hidden=true;h.setAttribute('role','dialog');h.setAttribute('aria-label','Riff runway');
@@ -3393,7 +3422,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&RW.run)rwS
   document.body.appendChild(h)})();
 
 /* ================= UPDATES: the home-screen copy picks up each new GitHub deploy ================= */
-const BUILD='20261120085634';
+const BUILD='20261121152818';
 const UPD={last:0,shown:false};
 function updBusy(){return (typeof RW!=='undefined'&&RW.run)||(typeof Player!=='undefined'&&Player.on)||(typeof MIC!=='undefined'&&MIC.on)}
 function updGo(v){try{const a=JSON.parse(localStorage.getItem('coach-upd')||'{}');localStorage.setItem('coach-upd',JSON.stringify({v,n:a.v===v?(a.n||0)+1:1}))}catch(e){}
